@@ -178,3 +178,12 @@ python3 tests/network_smoke.py
 ## v1.2 — diagnósticos e alinhamento de horas
 
 Alinhamento estrito da mesma hora em ECMWF, GFS, ICON, GEM e Best Match. A soma de 24h requer períodos consecutivos, sem contar lacunas como chuva zero. Painel opcional por fonte com completude, falhas de API e latência da requisição, sem chamadas extras. Best Match não é modelo independente. Testes locais simulados; desempenho real das APIs e precisão meteorológica continuam sujeitos a validação.
+
+## v1.3 — robustez por estação (29/10/2026)
+
+- Diagnóstico retrospectivo de sensibilidade: estações com erro menor, maior ou inalterado, com o mesmo peso por estação.
+- Reamostragem determinística de 1.000 grupos de estações com reposição (faixa exploratória de 90%) e teste removendo uma estação de cada vez.
+- Consistência classificada somente com cinco ou mais estações elegíveis, redução em 80% delas, faixa de ganho acima de zero e melhora não concentrada em um único posto.
+- Resultados apenas descritivos da amostra enviada; não extrapolados para a precisão nacional ou para dias futuros.
+- Exportação CSV com indicadores e ligação para dados horários oficiais do INMET.
+- Não altera automaticamente os pesos da previsão em tempo real. Não foram usados dados reais nesta simulação de teste.

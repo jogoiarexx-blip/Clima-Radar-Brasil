@@ -111,6 +111,22 @@
     badge.className='holdout-badge'+(ok?' is-approved':'');
     $('#networkHeadline').textContent=`${result.stationCount} estações · previsão ${result.lead*24}h antes`;
     $('#networkMetrics').replaceChildren(metricCard('temp',result.temp),metricCard('rain',result.rain));
+    const robustness=window.ClimaRobustness.summarize(result);
+    const cards=$('#networkRobustnessCards');cards.replaceChildren();
+    for(const [kind,info] of [['Temperatura',robustness.temp],['Chuva',robustness.rain]]){
+      const card=document.createElement('article');card.className='network-robustness-card';
+      const heading=document.createElement('strong');heading.textContent=kind;
+      const total=document.createElement('p');total.textContent=`${info.improved}/${info.n} estações melhoraram · ${info.worsened} pioraram · ${info.stable} sem mudança`;
+      const interval=document.createElement('p');
+      const unit=kind==='Temperatura'?'°C':'mm/h';
+      interval.textContent=info.limited?'Amostra pequena; não há classificação de consistência.' :
+        `Ganho médio ${nf(info.gain,3)} ${unit} · faixa exploratória ${nf(info.range.low,3)} a ${nf(info.range.high,3)} ${unit}`;
+      const resultNote=document.createElement('small');resultNote.textContent=info.reason;
+      const status=document.createElement('span');status.className='network-robustness-state';
+      status.textContent=info.consistent?'Consistente nesta amostra':info.limited?'Amostra limitada':'Sem consistência demonstrada';
+      status.dataset.level=info.consistent?'positive':info.limited?'limited':'uncertain';
+      card.append(heading,status,total,interval,resultNote);cards.append(card);
+    }
     const summaries=[];
     for(const [name,data] of [['Temperatura',result.temp],['Chuva',result.rain]]){
       if(data.models?.length)summaries.push(name+': '+data.models.map(m=>`${labels[m.id]||m.id} ${nf(m.mae)} ${name==='Chuva'?'mm/h':'°C'}`).join(' · '));
@@ -193,22 +209,23 @@
   });
   $('#networkExport').addEventListener('click',()=>{
     if(!report)return;
-    const lines=[['tipo','antecedencia_h','variavel','regiao','uf','estacao','valida','inicio','fim','horas_teste','mae_base','mae_ajustado','mae_ecmwf','mae_gfs','mae_icon','mae_gem','resultado']];
+    const lines=[['tipo','antecedencia_h','variavel','regiao','uf','estacao','valida','inicio','fim','horas_teste','mae_base','mae_ajustado','mae_ecmwf','mae_gfs','mae_icon','mae_gem','resultado','ganho_estacao','ganho_robusto_na_amostra','estacoes_melhoraram','faixa_reamostragem_inf','faixa_reamostragem_sup']];
     const stationById=new Map(report.stationInputs.map(x=>[x.id,x]));
     for(const shot of report.snapshots){
       for(const [kind,data] of [['temperatura',shot.result.temp],['chuva',shot.result.rain]]){
+        const robustness=window.ClimaRobustness.analyze(data,kind);
         for(const item of data.stations){
           const sta=stationById.get(item.id);
-          lines.push(['estacao',shot.lead*24,kind,window.ClimaRegional.regionForUf(sta?.uf)||'UF não informada',sta?.uf||'',item.name,item.valid?'sim':'não',item.holdoutStart||'',item.holdoutEnd||'',item.holdoutHours||0,item.baseMae??'',item.tunedMae??'',item.modelMae?.ecmwf??'',item.modelMae?.gfs??'',item.modelMae?.icon??'',item.modelMae?.gem??'',item.reason||data.reason]);
+          lines.push(['estacao',shot.lead*24,kind,window.ClimaRegional.regionForUf(sta?.uf)||'UF não informada',sta?.uf||'',item.name,item.valid?'sim':'não',item.holdoutStart||'',item.holdoutEnd||'',item.holdoutHours||0,item.baseMae??'',item.tunedMae??'',item.modelMae?.ecmwf??'',item.modelMae?.gfs??'',item.modelMae?.icon??'',item.modelMae?.gem??'',item.reason||data.reason,item.valid?(item.baseMae-item.tunedMae):'',robustness.consistent?'sim':'não',robustness.improved,robustness.range?.low??'',robustness.range?.high??'']);
         }
       }
     }
     for(const item of report.regional.rows){
-      lines.push(['regiao',item.lead*24,item.kind==='temp'?'temperatura':'chuva',item.region,'','',item.limited?'amostra pequena':'descritivo','','',item.hours,item.baseMae??'',item.tunedMae??'',item.models.ecmwf??'',item.models.gfs??'',item.models.icon??'',item.models.gem??'','agregado por estação']);
+      lines.push(['regiao',item.lead*24,item.kind==='temp'?'temperatura':'chuva',item.region,'','',item.limited?'amostra pequena':'descritivo','','',item.hours,item.baseMae??'',item.tunedMae??'',item.models.ecmwf??'',item.models.gfs??'',item.models.icon??'',item.models.gem??'','agregado por estação','','','','','']);
     }
     const csv='\ufeff'+lines.map(line=>line.map(safeCsvValue).join(';')).join('\r\n');
     const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-    const a=document.createElement('a');a.href=url;a.download='climaradar-v09-relatorio-regional.csv';
+    const a=document.createElement('a');a.href=url;a.download='climaradar-v13-robustez-regional.csv';
     document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
   });
 })();

@@ -41,7 +41,7 @@ if(u.pathname.includes('/weather-maps.json'))return {ok:true,json:async()=>({hos
 if(u.pathname.includes('/search'))return {ok:true,json:async()=>({results:[]})};
 return {ok:true,json:async()=>MAIN};};</script>'''.replace('__ARCHIVE__',json.dumps(archives)).replace('__MAIN__',json.dumps(primary))
 html=html.replace('</head>',shim+'\n</head>')
-for name in ['forecast-core.js','reliability-core.js','source-diagnostics.js','app.js','model-compare.js','audit-core.js','validation-core.js','audit-ui.js','network-core.js','regional-core.js','network-ui.js','radar-core.js','radar.js','mobile.js']:
+for name in ['forecast-core.js','reliability-core.js','source-diagnostics.js','app.js','model-compare.js','audit-core.js','validation-core.js','audit-ui.js','network-core.js','regional-core.js','robustness-core.js','network-ui.js','radar-core.js','radar.js','mobile.js']:
     html=html.replace(f'<script src="./{name}" defer></script>','<script>'+(root/name).read_text(encoding='utf8')+'</script>')
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium')
@@ -55,6 +55,9 @@ with sync_playwright() as p:
     page.wait_for_function("document.querySelector('#networkRows')?.children.length === 3",timeout=25000)
     result=page.evaluate("""() => ({result:document.querySelector('#networkResult').className,rows:document.querySelectorAll('#networkRows tr').length,summary:document.querySelector('#networkHeadline').textContent,export:!document.querySelector('#networkExport').disabled,scrollWidth:document.documentElement.scrollWidth})""")
     assert result['rows']==3 and result['export'] and not errors,(result,errors)
+    robustness=page.locator('#networkRobustnessCards').inner_text()
+    assert '3/3 estações melhoraram' in robustness and 'Amostra pequena' in robustness, robustness
+    assert page.locator('.network-robustness-card').count()==2
     coverage=page.locator('#regionalCoverage').inner_text()
     assert '3 UF(s) identificada(s)' in coverage, coverage
     page.locator('#networkResultLead').select_option('3')

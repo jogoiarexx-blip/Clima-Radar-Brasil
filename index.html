@@ -427,7 +427,7 @@
         <article class="weather-card network-panel">
           <div class="network-intro">
             <div><span class="mini-label">VALIDAÇÃO ESPACIAL E TEMPORAL</span><h3>Teste de generalização entre estações</h3><p>Envie de 3 a 6 arquivos CSV horários do INMET, de estações distintas. Os arquivos são lidos neste navegador; somente coordenadas e datas são consultadas nas APIs públicas do Open-Meteo.</p></div>
-            <span class="network-mark">V0.9 · ANÁLISE REGIONAL</span>
+            <span class="network-mark">V1.3 · ROBUSTEZ POR ESTAÇÃO</span>
           </div>
           <form id="networkForm" class="network-form">
             <div class="field-group network-files"><label for="networkCsv">Estações INMET (CSV individuais)</label><input type="file" id="networkCsv" accept=".csv,text/csv" multiple required /><small>3 a 6 estações a pelo menos 10 km entre si · máximo de 8 MB por arquivo · UF obtida do CSV quando informada</small></div>
@@ -520,6 +520,7 @@
   <script src="./audit-ui.js" defer></script>
   <script src="./network-core.js" defer></script>
   <script src="./regional-core.js" defer></script>
+  <script src="./robustness-core.js" defer></script>
   <script src="./network-ui.js" defer></script>
   <script src="./radar-core.js" defer></script>
   <script src="./radar.js" defer></script>

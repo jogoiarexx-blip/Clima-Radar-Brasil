@@ -407,3 +407,19 @@ body {background:#091521;background-image:radial-gradient(ellipse 60% 380px at 1
 .source-diagnostic-row[data-status="invalid"],.source-diagnostic-row[data-status="error"]{border-color:#9a5e60}
 @media(max-width:950px){.source-diagnostics-list{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:600px){.source-diagnostics-list{grid-template-columns:1fr}#sourceDiagnosticSummary{display:block;margin:5px 0}.source-diagnostic-row{display:grid;grid-template-columns:85px 1fr auto}}
+
+/* v1.3 — robustez de ganhos na amostra multiescala. */
+.network-robustness{margin:18px 0 22px;padding:19px;border:1px solid rgba(134,227,208,.18);border-radius:16px;background:rgba(10,28,41,.55)}
+.network-robustness-header h4{font-size:17px;font-weight:720;margin:0 0 6px;color:#e6f5fa}
+.network-robustness-header p,.network-robustness-note{font-size:12px;color:#9eb5c3;margin:0 0 12px}
+.network-robustness-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.network-robustness-card{display:flex;flex-direction:column;align-items:flex-start;gap:7px;border:1px solid rgba(168,210,230,.16);padding:17px;border-radius:13px;background:rgba(20,43,59,.7)}
+.network-robustness-card strong{font-size:15px}
+.network-robustness-card p{font-size:13px;margin:0;color:#d4e6ed}
+.network-robustness-card small{font-size:11px;color:#9eb5c3;line-height:1.55}
+.network-robustness-state{font-size:11px;font-weight:700;padding:4px 9px;border-radius:24px;border:1px solid rgba(200,223,237,.24);color:#9eb5c3}
+.network-robustness-state[data-level="positive"]{color:#89e0c4;border-color:rgba(100,213,167,.4)}
+.network-robustness-state[data-level="limited"]{color:#edcc8c;border-color:rgba(244,202,129,.4)}
+.network-robustness-note{margin:14px 0 8px;line-height:1.6}
+.network-official-link{display:inline-block;font-size:12px;font-weight:700;color:#a4e7dd;text-decoration:underline;text-underline-offset:4px}
+@media(max-width:650px){.network-robustness{padding:14px}.network-robustness-cards{grid-template-columns:1fr}.network-robustness-card{padding:14px}}
