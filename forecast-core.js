@@ -1,4 +1,4 @@
-/* ClimaRadar v0.6 — comparação robusta de modelos, sem dependências. */
+/* ClimaRadar v0.7 — comparação robusta de modelos, sem dependências. */
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -76,7 +76,7 @@
     const rSpread=rainModels.length>=2?Math.max(...rainValues)-Math.min(...rainValues):null;
     const sufficient=tempModels.length>=2;
     const medT=median(values),medRain=median(rainValues);
-    const verified=calibration?.version===2&&calibration?.weights&&typeof calibration.weights==='object';
+    const verified=calibration?.version===3&&calibration?.weights&&typeof calibration.weights==='object'&&(calibration?.validation?.temp?.eligible===true||calibration?.validation?.rain?.eligible===true);
     const tempWeights={},rainWeights={};
     function factor(variable,id){
       const w=verified ? calibration.weights?.[variable]?.[id] : null;

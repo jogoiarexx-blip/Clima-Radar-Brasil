@@ -40,7 +40,7 @@ test('calibração térmica não altera previsão de chuva',()=>{
  const a=fc.summary(data(25,0),'ecmwf','EC',times[0]);
  const b=fc.summary(data(30,1),'gfs','GFS',times[0]);
  const base=fc.ensemble(reference,[a,b]);
- const modified=fc.ensemble(reference,[a,b],{version:2,weights:{temp:{ecmwf:0.9,gfs:0.1},rain:null}});
+ const modified=fc.ensemble(reference,[a,b],{version:3,validation:{temp:{eligible:true},rain:{eligible:false}},weights:{temp:{ecmwf:0.9,gfs:0.1},rain:null}});
  assert.ok(Math.abs(modified.summary.temp-base.summary.temp)>0.1);
  assert.ok(Math.abs(modified.summary.rain24-base.summary.rain24)<1e-10);
 });
@@ -49,7 +49,7 @@ test('calibração de chuva não altera temperatura',()=>{
  const a=fc.summary(data(25,0),'ecmwf','EC',times[0]);
  const b=fc.summary(data(30,1),'gfs','GFS',times[0]);
  const base=fc.ensemble(reference,[a,b]);
- const modified=fc.ensemble(reference,[a,b],{version:2,weights:{temp:null,rain:{ecmwf:0.9,gfs:0.1}}});
+ const modified=fc.ensemble(reference,[a,b],{version:3,validation:{temp:{eligible:false},rain:{eligible:true}},weights:{temp:null,rain:{ecmwf:0.9,gfs:0.1}}});
  assert.ok(Math.abs(modified.summary.temp-base.summary.temp)<1e-10);
  assert.ok(Math.abs(modified.summary.rain24-base.summary.rain24)>0.1);
 });
@@ -61,4 +61,14 @@ test('calibração antiga não interfere na versão atual',()=>{
  const old=fc.ensemble(reference,[a,b],{version:1,weights:{ecmwf:0.95,gfs:0.05}});
  assert.equal(old.summary.temp,baseline.summary.temp);
  assert.equal(old.summary.rain24,baseline.summary.rain24);
+});
+
+test('calibração v2 sem teste reservado não é aplicada no consenso v3',()=>{
+ const reference=fc.summary(data(25,0.7),'bestmatch','BM',times[0]);
+ const a=fc.summary(data(25,0),'ecmwf','EC',times[0]);
+ const b=fc.summary(data(30,1),'gfs','GFS',times[0]);
+ const base=fc.ensemble(reference,[a,b]);
+ const old=fc.ensemble(reference,[a,b],{version:2,weights:{temp:{ecmwf:1,gfs:0},rain:null}});
+ assert.equal(base.summary.temp,old.summary.temp);
+ assert.equal(base.summary.rain24,old.summary.rain24);
 });

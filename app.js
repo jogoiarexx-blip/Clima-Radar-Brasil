@@ -4,7 +4,7 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const state = { place: null, loadingId: 0, searchId: 0, suggestions: [], abort: null, lastConsensus: null };
 const MAX_DAYS = 7;
-const CALIBRATION_KEY = 'climaradar.audit.weights.v2';
+const CALIBRATION_KEY = 'climaradar.audit.weights.v3';
 const MODEL_CONFIG = [
   { id: 'bestmatch', label: 'Best Match', type: 'primary', baseWeight: 0.22 },
   { id: 'ecmwf', label: 'ECMWF', api: 'https://api.open-meteo.com/v1/forecast', model: 'ecmwf_ifs', baseWeight: 0.32 },
@@ -120,7 +120,7 @@ function getCalibration() {
     const raw = localStorage.getItem(CALIBRATION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed || parsed.version !== 2 || !parsed.weights?.temp) return null;
+    if (!parsed || parsed.version !== 3 || !parsed.weights || !(parsed.validation?.temp?.eligible || parsed.validation?.rain?.eligible)) return null;
     return parsed;
   } catch {
     return null;

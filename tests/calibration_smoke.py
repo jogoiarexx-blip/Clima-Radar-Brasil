@@ -19,7 +19,7 @@ primary={"current":{"time":forecast_times[0],"temperature_2m":25,"apparent_tempe
 models=['ecmwf_ifs','ncep_gfs_seamless','icon_global','cmc_gem_seamless']
 archive={}
 for n,model in enumerate(models):
-    archive[model]={"hourly":{"time":station_times,"temperature_2m_previous_day1":[23+(.2*n)]*160,"precipitation_previous_day1":[.8+(.1*n) if i%12==0 else 0 for i in range(160)]}}
+    archive[model]={"hourly":{"time":station_times,"temperature_2m_previous_day1":[23.5 if n==0 else 28+n]*160,"precipitation_previous_day1":[(1.0 if i%12==0 else 0) if n==0 else (1.7+n*.1 if i%12==0 else .7+n*.1) for i in range(160)]}}
 csv='''ESTACAO:;ESTACAO TESTE
 LATITUDE:;-20,581
 LONGITUDE:;-47,859
@@ -34,7 +34,7 @@ const MOCK_MAIN=__MAIN__;const MOCK_ARCHIVE=__ARCHIVE__;
 window.fetch=async(input)=>{const u=new URL(input);if(u.hostname==='previous-runs-api.open-meteo.com')return {ok:true,json:async()=>MOCK_ARCHIVE[u.searchParams.get('models')]}; if(u.pathname.includes('/weather-maps.json'))return {ok:true,json:async()=>({host:'https://tilecache.rainviewer.com',radar:{past:[]}})};if(u.pathname.includes('/search'))return {ok:true,json:async()=>({results:[]})};return {ok:true,json:async()=>MOCK_MAIN};};
 </script>'''.replace('__MAIN__',json.dumps(primary)).replace('__ARCHIVE__',json.dumps(archive))
 html=html.replace('</head>',script+'\n</head>')
-for filename in ['forecast-core.js','app.js','model-compare.js','audit-core.js','audit-ui.js','radar-core.js','radar.js','mobile.js']:
+for filename in ['forecast-core.js','app.js','model-compare.js','audit-core.js','validation-core.js','audit-ui.js','radar-core.js','radar.js','mobile.js']:
     html=html.replace(f'<script src="./{filename}" defer></script>','<script>'+ (root/filename).read_text(encoding='utf8')+'</script>')
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium')
@@ -48,10 +48,12 @@ with sync_playwright() as p:
     result=page.evaluate("""() => ({rows:document.querySelectorAll('#auditBody tr').length,scope:document.querySelector('#auditScope').textContent,calibrationEnabled:!document.querySelector('#applyAuditCalibration').disabled,error:document.querySelector('#auditStatus').textContent})""")
     assert result['rows']==4,result
     assert result['calibrationEnabled'],result
+    assert page.locator('#holdoutMetrics .holdout-metric').count()==2
+    assert 'Erro original' in page.locator('#holdoutMetrics').inner_text()
     page.locator('#applyAuditCalibration').click()
     page.wait_for_timeout(400)
-    saved=page.evaluate("JSON.parse(localStorage.getItem('climaradar.audit.weights.v2'))")
-    assert saved['version']==2 and len(saved['weights']['temp'])==4 and len(saved['weights']['rain'])==4,saved
+    saved=page.evaluate("JSON.parse(localStorage.getItem('climaradar.audit.weights.v3'))")
+    assert saved['version']==3 and len(saved['weights']['temp'])==4 and len(saved['weights']['rain'])==4,saved
     assert not errors,errors
-    print('Fluxo INMET/4 modelos: OK; calibração v2 temperatura e chuva: OK; erros JS:',len(errors))
+    print('Fluxo INMET/4 modelos: OK; validação cronológica + calibração v3 temp/chuva: OK; erros JS:',len(errors))
     browser.close()

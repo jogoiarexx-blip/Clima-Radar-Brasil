@@ -1,4 +1,4 @@
-# ClimaRadar Brasil — v0.5 (auditoria técnica e comparação open source)
+# ClimaRadar Brasil — v0.7 (precisão verificada fora da amostra)
 
 Site estático de meteorologia, otimizado para GitHub Pages, com visualização de radar observado e comparação de modelos meteorológicos. **Não é um serviço de alertas oficial.**
 
@@ -79,3 +79,29 @@ python3 tests/calibration_smoke.py
 ```
 
 `calibration_smoke.py` usa CSV e respostas de modelos **simulados**. Não comprova que os servidores externos estejam disponíveis. Para medir melhoria real de precisão, é preciso testar períodos futuros reservados (fora da amostra de calibração), com várias estações INMET.
+
+
+## v0.7 — validação cronológica sem vazamento (29/10/2026)
+
+A próxima melhoria de precisão é **não promover pesos calibrados apenas porque melhoram o período usado no treinamento**.
+
+- Novo módulo `validation-core.js` (sem dependência de navegador) e suíte `tests/validation.test.js`.
+- Para cada variável, só entram os modelos com pelo menos 96 horas com previsões e observações válidas. As amostras devem ter pelo menos dois modelos; as observações são alinhadas pela **mesma hora UTC**, sem substituir ausências por zero.
+- **Treino:** dados antigos comuns com pelo menos 72 horas válidas. **Embargo:** 24 horas anteriores ao teste, para reduzir vazamento temporal. **Validação:** últimos dois dias UTC da amostra, exigindo ao menos 24 horas válidas.
+- Os pesos são estimados exclusivamente no treino, e seu erro é comparado aos pesos padrão no bloco de validação, usando a mesma metodologia aproximada de combinação robusta por variável.
+- **Aprovação térmica:** redução de MAE de pelo menos 2% e 0,05 °C. **Aprovação de chuva:** redução de MAE de pelo menos 2% e 0,02 mm/h, sem aumento do erro nos eventos chuvosos; são exigidas pelo menos 5 horas de chuva no treino e 3 no teste.
+- Apenas variáveis aprovadas têm pesos salvos como **v3**. Se não houver ganho, o botão de calibração é bloqueado; a versão v2 anterior não é aplicada automaticamente.
+- A aplicação continua limitada a **24h de antecedência, 50 km da estação e 45 dias da última observação**.
+- A interface da auditoria mostra uma comparação do **erro original × erro após ajuste** nos dias reservados, junto à cobertura da amostra e a justificativa quando não aprovado. A exportação CSV também contém as estatísticas da validação.
+
+**Limitações importantes:** os últimos dois dias são uma amostra pequena, sujeita a sorte e mudanças de regime meteorológico. O teste é retrospectivo e não comprova ganho futuro ou regional; com uma estação, não se extrapola para todo o Brasil. A comparação de chuva avalia precipitação horária, enquanto o painel oferece acumulado de 24h; os resultados não são diretamente equivalentes. Para comprovação mais forte, será necessário validar meses futuros e várias estações, sem refazer o ajuste com esses dados.
+
+### Testes da v0.7
+
+```bash
+node --test tests/*.test.js
+python3 tests/ui_smoke.py
+python3 tests/calibration_smoke.py
+```
+
+Os testes automatizados usam valores **sintéticos**, e não confirmam disponibilidade ou desempenho das APIs reais.

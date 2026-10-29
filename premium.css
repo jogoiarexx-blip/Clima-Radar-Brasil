@@ -320,3 +320,16 @@ body {background:#091521;background-image:radial-gradient(ellipse 60% 380px at 1
 .audit-calibration-note { color: var(--muted); font-size: .84rem; line-height: 1.5; margin: 10px 2px 4px; max-width: 900px; }
 .audit-table th, .audit-table td { white-space: nowrap; }
 .btn:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #89e8d6; outline-offset: 3px; }
+
+/* v0.7 — resultados fora da amostra */
+.holdout-panel{padding:24px;margin:20px 0;border-radius:20px;background:linear-gradient(145deg,rgba(27,52,66,.7),rgba(13,29,42,.75));border:1px solid rgba(134,227,208,.18)}
+.holdout-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}
+.holdout-head h4{font-size:1.2rem;letter-spacing:-.025em;margin:5px 0 0}
+.holdout-badge{font-size:.75rem;padding:7px 11px;border:1px solid rgba(246,207,131,.28);color:#f6cf83;border-radius:50px;background:rgba(246,207,131,.08);white-space:nowrap}
+.holdout-badge.is-approved{color:#96e8ce;border-color:rgba(134,227,208,.28);background:rgba(134,227,208,.08)}
+.holdout-description{font-size:.87rem;color:var(--muted);margin:8px 0 18px}
+.holdout-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.holdout-metric{border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);padding:15px 17px;min-width:0}
+.holdout-metric strong{font-size:1rem;display:block}.holdout-metric>span{display:block;font-size:.75rem;color:#b2d2d6;margin-top:4px}
+.holdout-metric p{font-size:.91rem;margin:10px 0 6px}.holdout-metric small{font-size:.79rem;color:var(--muted)}
+@media(max-width:660px){.holdout-panel{padding:15px}.holdout-head{align-items:flex-start;flex-direction:column}.holdout-metrics{grid-template-columns:1fr}.holdout-metric{padding:12px}}

@@ -61,36 +61,58 @@
     return el;
   }
   function buildCalibration(report) {
-    // Previsões anteriores a 24h são a base de referência. Outros horizontes
-    // servem para auditoria, sem extrapolar automaticamente sua habilidade.
-    if (report.lead !== 1 || !report.comparable || report.comparable.commonTempHours < 72) return null;
+    // Somente pesos aprovados em um bloco cronológico NÃO usado no treino.
+    if (report.lead !== 1 || !report.validation) return null;
     const ageDays = (Date.now() - Date.parse(report.end + 'T23:59:59Z')) / 86400000;
     if (!Number.isFinite(ageDays) || ageDays < -1 || ageDays > 45) return null;
-    const tempEligible = report.rows.filter(row =>
-      row.result?.nTemp >= 72 && Number.isFinite(row.result.tempMae) && row.result.tempMae >= 0);
-    if (tempEligible.length < 2) return null;
-    const calculateWeights = (rows, key) => {
-      const values = rows.map(row => ({ id: row.id, score: 1 / Math.max(0.2, row.result[key]) }));
-      const total = values.reduce((acc, item) => acc + item.score, 0);
-      return Object.fromEntries(values.map(item => [item.id, item.score / total]));
-    };
-    const rainyEligible = report.rows.filter(row =>
-      row.result?.nRain >= 72 && row.result.wetHours >= 5 &&
-      Number.isFinite(row.result.rainMaeWet));
-    // Não calibrar chuva em série predominantemente seca.
-    const rainWeights = rainyEligible.length >= 2 && report.comparable.commonRainHours >= 72
-      ? calculateWeights(rainyEligible, 'rainMaeWet') : null;
+    const place = window.ClimaRadarCurrentPlace;
+    if (place && Number.isFinite(place.latitude) && Number.isFinite(place.longitude) &&
+        core.distanceKm(place.latitude,place.longitude,report.coords.latitude,report.coords.longitude)>50) return null;
+    const {temp,rain}=report.validation;
+    if (!temp?.eligible && !rain?.eligible) return null;
     return {
-      version: 2,
-      createdAt: new Date().toISOString(),
-      station: report.stationName, coords: report.coords,
-      start: report.start, end: report.end, lead: report.lead,
-      sample: { tempHours: report.comparable.commonTempHours,
-        rainHours: report.comparable.commonRainHours,
-        rainyHours: rainyEligible[0]?.result.wetHours ?? 0 },
-      weights: { temp: calculateWeights(tempEligible,'tempMae'), rain: rainWeights },
-      note: 'Ajuste exploratório local de pesos térmicos e de chuva separados, em horas comuns aos modelos, sem garantia de ganho fora da amostra.'
+      version: 3, createdAt:new Date().toISOString(), station:report.stationName,
+      coords:report.coords,start:report.start,end:report.end,lead:report.lead,
+      weights:{temp:temp?.eligible?temp.weights:null,rain:rain?.eligible?rain.weights:null},
+      validation:{
+        temp:{eligible:!!temp?.eligible,trainHours:temp?.trainHours||0,holdoutHours:temp?.holdoutHours||0,
+          baselineMae:temp?.baseMae??null,tunedMae:temp?.tunedMae??null,
+          improvementPct:temp?.improvementPct??null},
+        rain:{eligible:!!rain?.eligible,trainHours:rain?.trainHours||0,holdoutHours:rain?.holdoutHours||0,
+          baselineMae:rain?.baseMae??null,tunedMae:rain?.tunedMae??null,
+          improvementPct:rain?.improvementPct??null}
+      },
+      note:'Pesos liberados por validação cronológica com 24h de embargo. Validade local e temporária, sem garantia futura.'
     };
+  }
+  function renderHoldout(report) {
+    const result=report.validation;
+    const panel=$('#holdoutPanel');
+    if (!panel || !result) return;
+    const available=!!buildCalibration(report);
+    const badge=$('#holdoutBadge');
+    const foundGain=!!(result.temp?.eligible||result.rain?.eligible);
+    badge.textContent=available?'Ajuste validado na amostra':foundGain?'Ganho observado · uso bloqueado':'Sem ganho comprovado';
+    badge.className='holdout-badge'+(available?' is-approved':'');
+    const format=(v,units)=>Number.isFinite(v)?`${number(v,2)} ${units}`:'—';
+    const label=(info)=>info.eligible?'Melhora confirmada':'Sem ajuste';
+    const titles=[['Temperatura',result.temp,'°C'],['Precipitação',result.rain,'mm/h']];
+    const holder=$('#holdoutMetrics');holder.replaceChildren();
+    for(const [title,info,units] of titles) {
+      const card=document.createElement('div');card.className='holdout-metric';
+      const heading=document.createElement('strong');heading.textContent=title;
+      const statusText=document.createElement('span');statusText.textContent=label(info);
+      const stat=document.createElement('p');
+      stat.textContent=`Erro original ${format(info.baseMae,units)} · com pesos ${format(info.tunedMae,units)}`;
+      const detail=document.createElement('small');
+      detail.textContent=`Treino ${info.trainHours}h · teste ${info.holdoutHours}h · ${info.reason}`;
+      card.append(heading,statusText,stat,detail);holder.appendChild(card);
+    }
+    const validDays=result.temp?.holdoutStart||result.rain?.holdoutStart;
+    $('#holdoutDescription').textContent=validDays
+      ?`Validação reservada: ${validDays} a ${result.temp?.holdoutEnd||result.rain?.holdoutEnd} (UTC), separados do treino por 24h. O resultado usa as mesmas horas de cada variável para os modelos elegíveis.`
+      :'Não há dados suficientes para uma validação cronológica independente.';
+    $('#holdoutLimits').textContent='Somente uma estação e um curto intervalo histórico; melhora no teste reservado não garante desempenho futuro em outros locais ou eventos. Quando não existe ganho mensurável, permanecem os pesos padrão.';
   }
   function renderReport(report) {
     $('#auditResult').classList.remove('hidden');
@@ -119,10 +141,11 @@
       : 'São necessárias pelo menos 24 horas válidas e simultâneas em dois modelos para compará-los. Confira a data do arquivo e a disponibilidade das previsões arquivadas.';
     $('#auditScope').textContent = `Estação: ${report.stationName} · Período (UTC): ${report.start} a ${report.end} · Antecedência: ${report.lead * 24}h · Observações no período: ${report.observations.length} · Horas comuns temperatura: ${report.comparable?.commonTempHours ?? 0} · Horas comuns chuva: ${report.comparable?.commonRainHours ?? 0} · ${distanceWarning(report.coords)}`;
     $('#exportAudit').disabled = false;
+    renderHoldout(report);
     $('#applyAuditCalibration').disabled = !buildCalibration(report);
     $('#auditCalibrationNote').textContent = buildCalibration(report)
-      ? 'Amostra habilitada para pesos experimentais (24h). Temperatura e chuva são calibradas separadamente; chuva só com registros chuvosos suficientes.'
-      : 'Calibração bloqueada: requer ≥72 horas comuns para temperatura, ≥2 modelos e dados dos últimos 45 dias, com antecedência de 24h. Sem chuva suficiente, apenas temperatura pode ser calibrada.';
+      ? 'Pesos liberados apenas nas variáveis com redução de erro no bloco temporal reservado. Aplicação limitada à estação, a 50 km e por 45 dias.'
+      : 'Pesos bloqueados: falta ganho suficiente no teste reservado, dados atuais ou proximidade da estação (até 50 km). Os pesos padrão permanecem ativos.';
   }
 
   $('#stationCsv').addEventListener('change', async event => {
@@ -187,11 +210,12 @@
           ? 'tempo excedido' : String(outcome.reason?.message || 'erro de rede').slice(0, 100) };
     });
     const comparable = core.evaluateComparable(subset, candidates, lead);
+    const validation = window.ClimaValidation.validate(subset, candidates, lead);
     const rows = comparable.rows.map(row => ({
       id: row.id, label: row.label, result: row.result,
       error: row.error || (!row.result?.nTemp && !row.result?.nRain ? 'Sem amostra comum válida' : null)
     }));
-    lastReport = { rows, comparable, stationName: station.station || 'Estação importada',
+    lastReport = { rows, comparable, validation, stationName: station.station || 'Estação importada',
       coords, start: begin, end: lastDay, lead, observations: subset };
     renderReport(lastReport);
     const available = rows.filter(row => row.result && row.result.nTemp > 0).length;
@@ -202,12 +226,12 @@
     if (!lastReport) return;
     const calibration = buildCalibration(lastReport);
     if (!calibration) {
-      status('Calibração exige ao menos 72 horas comuns, dois modelos, dados recentes e antecedência de 24h.', 'error');
+      status('Os pesos não passaram na validação temporal reservada ou os dados são insuficientes.', 'error');
       return;
     }
     if (typeof window.ClimaRadarSetCalibration === 'function') {
       window.ClimaRadarSetCalibration(calibration);
-      status('Calibração experimental salva: temperatura e chuva usam erros distintos. Só vale até 50 km da estação e por 45 dias após o fim da amostra.', 'ok');
+      status('Ajuste v3 aplicado apenas às variáveis aprovadas no teste reservado. Validade de 45 dias e até 50 km da estação.', 'ok');
     } else {
       status('A interface principal ainda não está pronta para receber calibração.', 'error');
     }
@@ -223,7 +247,7 @@
   $('#exportAudit').addEventListener('click', () => {
     if (!lastReport) return;
     const csv = [
-      ['modelo', 'antecedencia_h', 'estacao', 'latitude', 'longitude', 'inicio_utc', 'fim_utc', 'n_temp', 'mae_temp_c', 'bias_temp_c', 'n_chuva', 'mae_chuva_mm_h', 'horas_com_chuva_observada', 'mae_chuva_eventos_mm_h', 'status'],
+      ['modelo', 'antecedencia_h', 'estacao', 'latitude', 'longitude', 'inicio_utc', 'fim_utc', 'n_temp', 'mae_temp_c', 'bias_temp_c', 'n_chuva', 'mae_chuva_mm_h', 'horas_com_chuva_observada', 'mae_chuva_eventos_mm_h', 'status', 'temp_mae_base_teste', 'temp_mae_ajustado_teste', 'temp_melhora_aprovada', 'chuva_mae_base_teste', 'chuva_mae_ajustado_teste', 'chuva_melhora_aprovada', 'treino_temp_h', 'teste_temp_h', 'treino_chuva_h', 'teste_chuva_h'],
       ...lastReport.rows.map(row => [
         row.label,
         lastReport.lead * 24,
@@ -239,7 +263,10 @@
         row.result?.rainMae ?? '',
         row.result?.rainyHours ?? '',
         row.result?.rainMaeWet ?? '',
-        row.error || (row.result?.nTemp < 12 ? 'amostra insuficiente' : 'ok')
+        row.error || (row.result?.nTemp < 24 ? 'amostra insuficiente' : 'ok'),
+        lastReport.validation?.temp?.baseMae??'',lastReport.validation?.temp?.tunedMae??'',lastReport.validation?.temp?.eligible?'sim':'não',
+        lastReport.validation?.rain?.baseMae??'',lastReport.validation?.rain?.tunedMae??'',lastReport.validation?.rain?.eligible?'sim':'não',
+        lastReport.validation?.temp?.trainHours??'',lastReport.validation?.temp?.holdoutHours??'',lastReport.validation?.rain?.trainHours??'',lastReport.validation?.rain?.holdoutHours??''
       ])
     ].map(values => values.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(';')).join('\r\n');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });

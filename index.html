@@ -369,12 +369,18 @@
             </div>
           </form>
           <div id="auditStatus" class="audit-feedback">Importe um CSV do INMET para iniciar.</div>
-          <p id="auditCalibrationNote" class="audit-calibration-note" aria-live="polite">A comparação exige horas válidas simultâneas. Calibração exige 72 horas comuns recentes e antecedência de 24h; chuva precisa de eventos observados suficientes.</p>
+          <p id="auditCalibrationNote" class="audit-calibration-note" aria-live="polite">Validação cronológica: períodos de treino e teste separados por 24 horas; pesos só são liberados se reduzirem o erro no período reservado.</p>
           <section id="auditResult" class="audit-result hidden">
             <div class="audit-summary">
               <h3 id="auditHeadline">Sem análise</h3>
               <p id="auditInterpretation">A classificação será exibida após a comparação.</p>
               <p id="auditScope" class="field-help"></p>
+            </div>
+            <div id="holdoutPanel" class="holdout-panel" aria-live="polite">
+              <div class="holdout-head"><div><span class="mini-label">VALIDAÇÃO FORA DA AMOSTRA</span><h4>Os pesos melhoraram em dados reservados?</h4></div><span id="holdoutBadge" class="holdout-badge">Aguardando</span></div>
+              <p id="holdoutDescription" class="holdout-description">A análise divide os dados por ordem temporal. As horas de validação não participam da criação dos pesos.</p>
+              <div id="holdoutMetrics" class="holdout-metrics"></div>
+              <p id="holdoutLimits" class="field-help"></p>
             </div>
             <div class="table-wrap">
               <table class="audit-table">
@@ -446,6 +452,7 @@
   <script src="./app.js" defer></script>
   <script src="./model-compare.js" defer></script>
   <script src="./audit-core.js" defer></script>
+  <script src="./validation-core.js" defer></script>
   <script src="./audit-ui.js" defer></script>
   <script src="./radar-core.js" defer></script>
   <script src="./radar.js" defer></script>
