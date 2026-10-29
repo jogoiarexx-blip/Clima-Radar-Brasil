@@ -34,7 +34,7 @@ const MOCK_MAIN=__MAIN__;const MOCK_ARCHIVE=__ARCHIVE__;
 window.fetch=async(input)=>{const u=new URL(input);if(u.hostname==='previous-runs-api.open-meteo.com')return {ok:true,json:async()=>MOCK_ARCHIVE[u.searchParams.get('models')]}; if(u.pathname.includes('/weather-maps.json'))return {ok:true,json:async()=>({host:'https://tilecache.rainviewer.com',radar:{past:[]}})};if(u.pathname.includes('/search'))return {ok:true,json:async()=>({results:[]})};return {ok:true,json:async()=>MOCK_MAIN};};
 </script>'''.replace('__MAIN__',json.dumps(primary)).replace('__ARCHIVE__',json.dumps(archive))
 html=html.replace('</head>',script+'\n</head>')
-for filename in ['forecast-core.js','app.js','model-compare.js','audit-core.js','validation-core.js','audit-ui.js','radar-core.js','radar.js','mobile.js']:
+for filename in ['forecast-core.js','reliability-core.js','app.js','model-compare.js','audit-core.js','validation-core.js','audit-ui.js','radar-core.js','radar.js','mobile.js']:
     html=html.replace(f'<script src="./{filename}" defer></script>','<script>'+ (root/filename).read_text(encoding='utf8')+'</script>')
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium')

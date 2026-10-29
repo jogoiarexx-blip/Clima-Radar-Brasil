@@ -35,7 +35,8 @@
 
   async function loadMetadata(force = false) {
     if (!force && state.meta && Date.now() - state.lastMetadataAt < 600000) return state.meta;
-    const response = await fetch(core.METADATA_ENDPOINT, { cache: 'default' });
+    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),10000);
+    let response;try{response=await fetch(core.METADATA_ENDPOINT,{cache:'no-store',signal:controller.signal});}finally{clearTimeout(timeout);}
     if (!response.ok) throw new Error(`O servidor de radar respondeu ${response.status}.`);
     const meta = core.parseMetadata(await response.json());
     state.meta = meta;
@@ -72,7 +73,7 @@
     $('#radarFrameTime').textContent = clock;
     $('#radarObservedAt').textContent = `Quadro ${clock} · Brasília`;
     const minutes = core.ageMinutes(f.time);
-    const freshness = minutes > 40 ? ` Último quadro com cerca de ${minutes} minutos de atraso.` : '';
+    const freshness = minutes > 40 ? ` Quadro histórico de aproximadamente ${minutes} minutos atrás.` : '';
     status(`Quadro observado às ${clock} (horário de Brasília).${freshness} Imagem de radar: a ausência de cor não garante ausência de chuva.`);
     $('#radarFrameRange').value = String(i);
     updateSteps();
@@ -106,6 +107,7 @@
     try {
       const meta = await loadMetadata(force);
       if (token !== state.request) return;
+      if(!core.isLatestFrameRecent(meta))throw new Error('O último quadro do radar está muito antigo para representar a situação recente.');
       const range = $('#radarFrameRange');
       range.min = '0';
       range.max = String(meta.frames.length - 1);
@@ -181,6 +183,7 @@
     state.map.setView([p.latitude,p.longitude],6, { animate: true });
   });
   $('#radarRefresh').addEventListener('click', async () => { if (!state.initialized) await init(); else await refresh(true); });
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.initialized&&Date.now()-state.lastMetadataAt>600000)refresh(true);});
   document.addEventListener('climaradar:place', event => changePlace(event.detail));
   if (window.ClimaRadarCurrentPlace) changePlace(window.ClimaRadarCurrentPlace);
   if ('IntersectionObserver' in window) {

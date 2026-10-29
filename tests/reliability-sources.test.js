@@ -1,0 +1,3 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
+test('módulo carregado antes da aplicação',()=>{const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.ok(html.indexOf('reliability-core.js')>0&&html.indexOf('reliability-core.js')<html.indexOf('src="./app.js"'));});
+test('indicador e botão disponíveis',()=>{const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/id="forecastHealth"/);assert.match(html,/id="forecastReload"/);});

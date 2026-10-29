@@ -1,0 +1,12 @@
+const test=require('node:test');const assert=require('node:assert/strict');const r=require('../reliability-core.js');
+const now=Date.parse('2026-10-29T21:00:00Z');
+const payload={utc_offset_seconds:-10800,current:{time:'2026-10-29T17:45',temperature_2m:27},hourly:{time:['2026-10-29T17:00'],temperature_2m:[27]},daily:{time:['2026-10-29']}};
+test('offset UTC correto',()=>assert.equal(r.observationAgeMinutes(payload,now),15));
+test('fonte vencida bloqueada',()=>assert.equal(r.assessPrimary({...payload,current:{...payload.current,time:'2026-10-29T10:00'}},now).ok,false));
+test('fonte futura incoerente bloqueada',()=>assert.equal(r.assessPrimary({...payload,current:{...payload.current,time:'2026-10-30T04:00'}},now).ok,false));
+test('temperatura ausente bloqueada',()=>assert.equal(r.assessPrimary({...payload,current:{...payload.current,temperature_2m:null}},now).ok,false));
+test('fuso ausente não gera falso atraso',()=>assert.equal(r.assessPrimary({...payload,utc_offset_seconds:undefined},now).ok,true));
+test('fonte consistente aprovada',()=>assert.equal(r.assessPrimary(payload,now).ok,true));
+test('fontes com temperatura válida',()=>assert.deepEqual(r.sourceCoverage([{id:'ecmwf',temp:25},{id:'icon',temp:null}],[{id:'ecmwf',label:'ECMWF'},{id:'icon',label:'ICON'}]),{count:1,total:2,unavailable:['ICON']}));
+test('janela de renovação e limite de tentativas',()=>{assert.equal(r.shouldRefresh(now-1800000,now-600000,now),true);assert.equal(r.shouldRefresh(now-1800000,now-60000,now),false);assert.equal(r.shouldRefresh(now-600000,now-600000,now),false);});
+test('retentativa após falha',()=>{assert.equal(r.shouldRefresh(null,now-300001,now),true);assert.equal(r.shouldRefresh(null,now-60000,now),false);});

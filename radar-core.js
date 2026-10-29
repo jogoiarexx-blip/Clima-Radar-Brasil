@@ -27,5 +27,6 @@
     return `${meta.host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
   }
   function ageMinutes(frameTime, now = Date.now()) { return Math.max(0, Math.floor((now - frameTime * 1000) / 60000)); }
-  return { METADATA_ENDPOINT, parseMetadata, tileTemplate, ageMinutes };
+  function isLatestFrameRecent(meta,now=Date.now(),limit=90){return !!meta?.frames?.length&&ageMinutes(meta.frames[meta.frames.length-1].time,now)<=limit;}
+  return { METADATA_ENDPOINT, parseMetadata, tileTemplate, ageMinutes, isLatestFrameRecent };
 });

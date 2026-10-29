@@ -163,3 +163,13 @@ python3 tests/network_smoke.py
 - Três novos testes de regressão, além dos testes de interface em desktop e mobile com dados meteorológicos simulados.
 
 **Limite:** não foi realizada comprovação de maior acurácia meteorológica com observações reais nesta revisão.
+
+
+## v1.1 — disponibilidade e recuperação (29/10/2026)
+- Troca de cidade limpa os valores anteriores antes de novas requisições.
+- Status de disponibilidade dos modelos independentes e botão de atualização.
+- Renovação de previsão após 30 minutos no retorno à aba, com intervalo mínimo de 5 minutos entre tentativas.
+- Idade de dados principais verificada com fuso UTC da API, quando fornecido.
+- Radar exibe erro se seu último quadro tem mais de 90 minutos.
+- Timeout de 15 s de previsão e 10 s do radar.
+- Testes: 57 automatizados, interface desktop/mobile e simulação de falha; não comprovam acurácia meteorológica real.

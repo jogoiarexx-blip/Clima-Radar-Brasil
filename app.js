@@ -2,7 +2,7 @@
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
-const state = { place: null, loadingId: 0, searchId: 0, suggestions: [], abort: null, lastConsensus: null };
+const state = { place: null, loadingId: 0, searchId: 0, suggestions: [], abort: null, lastConsensus: null, lastSuccessAt: 0, lastAttemptAt: 0, loading: false };
 const MAX_DAYS = 7;
 const CALIBRATION_KEY = 'climaradar.audit.weights.v3';
 const MODEL_CONFIG = [
@@ -18,16 +18,17 @@ const NOW_FORMAT = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'num
 function fetchJson(url, options = {}) {
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 15000);
+  const forwardAbort=()=>ctrl.abort();
   if (options.signal) {
     if (options.signal.aborted) ctrl.abort();
-    else options.signal.addEventListener('abort', () => ctrl.abort(), { once: true });
+    else options.signal.addEventListener('abort', forwardAbort, { once: true });
   }
   return fetch(url, { signal: ctrl.signal }).then(async response => {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     const data = await response.json();
     if (data.error) throw new Error(data.reason || 'Dados indisponíveis');
     return data;
-  }).finally(() => clearTimeout(timeout));
+  }).finally(() => { clearTimeout(timeout); options.signal?.removeEventListener('abort', forwardAbort); });
 }
 function queryUrl(base, params) {
   const url = new URL(base);
@@ -402,6 +403,21 @@ function saveRecentCity(place) {
   renderRecentCities();
 }
 
+function setForecastHealth(message,kind='') { const el=$('#forecastHealth'); if(el){el.textContent=message;el.dataset.status=kind;} }
+function resetForecastView() {
+ const ids=['currentTemp','tempMax','tempMin','feelsLike','humidity','wind','rainNow','todayLabel','confidenceScore','spreadTemp','spreadRain','modelsOnline','rainChance','rain24','nextRain','consensusRain24','worstCaseRain'];
+ ids.forEach(id=>setText('#'+id,'—'));
+ setText('#weatherDesc','Aguardando dados'); setText('#consensusTitle','Aguardando comparação');
+ setText('#consensusText','Consultando fontes meteorológicas…');setText('#consensusSummary','Aguardando modelos disponíveis.');
+ setText('#riskLabel','Aguardando a previsão de chuva.');setText('#confidenceBadge','Calculando acordo');
+ $('#confidenceBadge').className='pill';$('#rainBar').style.width='0%';
+ $('#heroIcon').replaceChildren();$('#hourlyChart').textContent='Carregando previsão horária…';
+ $('#hourlyItems').replaceChildren();$('#dailyCards').textContent='Carregando previsão semanal…';
+ for(const config of MODEL_CONFIG){const card=$('[data-model="'+config.id+'"]');if(!card)continue;
+  card.querySelector('.model-temp').textContent='—';card.querySelector('.model-rain').textContent='—';card.querySelector('.model-status').textContent='Aguardando';}
+ document.dispatchEvent(new Event('climaradar:models-reset'));
+}
+function markForecastDone(message,kind=''){state.loading=false;$('#forecastReload').disabled=false;setForecastHealth(message,kind);}
 async function loadPlace(place) {
   const id = ++state.loadingId;
   if (state.abort) state.abort.abort();
@@ -410,7 +426,10 @@ async function loadPlace(place) {
   state.place = place;
   window.ClimaRadarCurrentPlace = { name: place.name, latitude: place.latitude, longitude: place.longitude };
   document.dispatchEvent(new CustomEvent('climaradar:place', { detail: window.ClimaRadarCurrentPlace }));
-  clearNotice();
+  state.loading=true;state.lastAttemptAt=Date.now();
+  $('#forecastReload').disabled=true;
+  setForecastHealth('Consultando cinco fontes meteorológicas…','loading');
+  resetForecastView();clearNotice();
   setText('#cityName', place.name + (place.admin1 ? ', ' + place.admin1 : ''));
   setText('#fetchedAt', 'Carregando...');
   $('#suggestions').classList.add('hidden');
@@ -437,10 +456,15 @@ async function loadPlace(place) {
   if (primaryResult.status === 'rejected') {
     notify('Não foi possível carregar a previsão desta cidade. Tente novamente em instantes. Detalhe: ' + (primaryResult.reason?.message || 'fonte indisponível'), true);
     setText('#fetchedAt', 'Indisponível');
+    markForecastDone('Fonte principal indisponível. Atualize a consulta.','error');
     return;
   }
 
   const primaryData = primaryResult.value;
+  const quality=window.ClimaReliability.assessPrimary(primaryData);
+  if(!quality.ok){notify(quality.reason+' Tente atualizar a consulta.',true);
+    setText('#fetchedAt','Fonte desatualizada');
+    markForecastDone('Previsão desatualizada ou incompleta.','error');return;}
   const targetHour = primaryData.current?.time || primaryData.hourly?.time?.[0];
   let primarySummary;
   try {
@@ -449,6 +473,7 @@ async function loadPlace(place) {
   } catch {
     notify('A fonte de previsão retornou dados incompletos. Atualize a consulta para tentar novamente.', true);
     setText('#fetchedAt', 'Dados incompletos');
+    markForecastDone('Dados da fonte principal incompletos.','error');
     return;
   }
   const modelSummaries = [];
@@ -460,6 +485,7 @@ async function loadPlace(place) {
       } catch { /* ignora modelo inválido */ }
     }
   });
+  const coverage=window.ClimaReliability.sourceCoverage(modelSummaries,MODEL_CONFIG.filter(m=>m.type!=='primary'));
   const consensus = computeConsensus(primarySummary, modelSummaries);
   state.lastConsensus = consensus;
   renderCurrent(primaryData, place, consensus);
@@ -468,6 +494,9 @@ async function loadPlace(place) {
   renderHourly(primaryData, consensus);
   renderDaily(primaryData);
   renderModels(primarySummary, modelSummaries);
+  state.lastSuccessAt=Date.now();
+  const partial=coverage.count<coverage.total;
+  markForecastDone('Previsão atualizada · '+coverage.count+'/'+coverage.total+' modelos independentes disponíveis',partial?'partial':'ok');
   saveRecentCity(place);
   document.dispatchEvent(new CustomEvent('climaradar:models-ready', {detail: {primary: primarySummary, models: [primarySummary, ...modelSummaries]}}));
   try {
@@ -533,6 +562,12 @@ $('#useLocation').addEventListener('click', () => {
     notify('Não foi possível acessar sua localização. ' + (err?.message || ''), true);
   }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 });
 });
+
+$('#forecastReload').addEventListener('click',()=>{if(state.place&&!state.loading)loadPlace(state.place);});
+function refreshIfNeeded(){if(document.hidden||state.loading||!state.place||navigator.onLine===false)return;
+ if(window.ClimaReliability.shouldRefresh(state.lastSuccessAt,state.lastAttemptAt,Date.now()))loadPlace(state.place);}
+document.addEventListener('visibilitychange',refreshIfNeeded);
+window.addEventListener('online',refreshIfNeeded);window.addEventListener('focus',refreshIfNeeded);
 
 function boot() {
   setCalibrationState();

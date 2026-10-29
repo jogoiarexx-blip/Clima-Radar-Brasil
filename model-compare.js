@@ -49,5 +49,8 @@
   }
   $('#compareTemp')?.addEventListener('click',()=>{state.metric='temp';$('#compareTemp').classList.add('is-active');$('#compareRain').classList.remove('is-active');render();});
   $('#compareRain')?.addEventListener('click',()=>{state.metric='rain';$('#compareRain').classList.add('is-active');$('#compareTemp').classList.remove('is-active');render();});
+  document.addEventListener('climaradar:models-reset',()=>{state.series=[];state.target=null;
+    const chart=$('#comparisonGraph');if(chart)chart.textContent='Aguardando os modelos da cidade selecionada…';
+    $('#comparisonLegend')?.replaceChildren();});
   document.addEventListener('climaradar:models-ready',e=>update(e.detail.models,e.detail.primary));
 })();

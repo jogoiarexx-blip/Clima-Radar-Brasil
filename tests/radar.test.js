@@ -29,6 +29,7 @@ test('informa idade sem valores negativos',()=>{
   assert.equal(radar.ageMinutes(100,100000+30*60000),30);
   assert.equal(radar.ageMinutes(100,90000),0);
 });
+test('quadros de radar atrasados não são apresentados como recentes',()=>{const now=(1793278200+91*60)*1000;assert.equal(radar.isLatestFrameRecent(radar.parseMetadata(metadata),now),false);assert.equal(radar.isLatestFrameRecent(radar.parseMetadata(metadata),(1793278200+20*60)*1000),true);});
 test('sem quadros não representa radar como ativo',()=>{
   assert.throws(()=>radar.parseMetadata({...metadata,radar:{past:[]}}),/não retornou quadros/);
 });
