@@ -146,3 +146,8 @@ python3 tests/network_smoke.py
 ```
 
 **Atenção:** os testes offline usam dados simulados. Para demonstrar ganho meteorológico real, importe ao menos três CSVs independentes de diferentes estações do INMET e valide as séries históricas das APIs. A aprovação no teste retrospectivo não significa garantia de previsão futura. A API Previous Runs conserva antecedências fixas e, conforme a documentação do provedor, sua cobertura histórica depende do modelo.
+
+
+## Imagens WebP otimizadas
+
+Ícone 160×160; radar 400×300; logotipo 780×260; favicon 64×64 e banner social 1200×630 em WebP. A hero image de 1050×591 continua no desktop; o celular usa uma versão 520×293 via picture. O PNG de favicon e o JPG social são preservados como arquivos de compatibilidade.

@@ -382,3 +382,6 @@ body {background:#091521;background-image:radial-gradient(ellipse 60% 380px at 1
 .footer-brand-asset img { width:100%; height:auto; }
 @media (max-width:860px) { .hero-art {left:auto;right:-22px;top:18px;width:93%;opacity:.12} }
 @media (max-width:600px) { .hero-art {right:-18px;top:23px;opacity:.1} .footer-brand-asset{width:min(292px,100%)} }
+
+/* WebP responsivo: arte do hero adequada ao desktop e celular */
+.hero-art img { display:block; width:100%; height:auto; }
