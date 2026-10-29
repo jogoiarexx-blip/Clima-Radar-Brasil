@@ -173,3 +173,8 @@ python3 tests/network_smoke.py
 - Radar exibe erro se seu último quadro tem mais de 90 minutos.
 - Timeout de 15 s de previsão e 10 s do radar.
 - Testes: 57 automatizados, interface desktop/mobile e simulação de falha; não comprovam acurácia meteorológica real.
+
+
+## v1.2 — diagnósticos e alinhamento de horas
+
+Alinhamento estrito da mesma hora em ECMWF, GFS, ICON, GEM e Best Match. A soma de 24h requer períodos consecutivos, sem contar lacunas como chuva zero. Painel opcional por fonte com completude, falhas de API e latência da requisição, sem chamadas extras. Best Match não é modelo independente. Testes locais simulados; desempenho real das APIs e precisão meteorológica continuam sujeitos a validação.

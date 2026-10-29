@@ -86,6 +86,11 @@
         <span id="forecastHealth" role="status" aria-live="polite">Consultando fontes meteorológicas…</span>
         <button type="button" id="forecastReload" class="forecast-reload" aria-label="Atualizar dados de previsão">Atualizar previsão</button>
       </div>
+      <details class="source-diagnostics" id="sourceDiagnostics">
+        <summary>Detalhes das fontes meteorológicas <span id="sourceDiagnosticSummary">Aguardando respostas das fontes.</span></summary>
+        <ul id="sourceDiagnosticList" class="source-diagnostics-list" aria-live="polite"></ul>
+        <p>Tempo de resposta da consulta, não data de emissão ou precisão do modelo. Best Match é referência, não quinto modelo independente.</p>
+      </details>
       <section class="overview-grid">
         <article class="weather-card current-card">
           <div class="card-topline">
@@ -507,6 +512,7 @@
   </nav>
   <script src="./forecast-core.js" defer></script>
   <script src="./reliability-core.js" defer></script>
+  <script src="./source-diagnostics.js" defer></script>
   <script src="./app.js" defer></script>
   <script src="./model-compare.js" defer></script>
   <script src="./audit-core.js" defer></script>

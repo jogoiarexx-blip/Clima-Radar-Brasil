@@ -68,7 +68,7 @@ function setText(selector, value) { const node = $(selector); if (node) node.tex
 function getIndexForNow(times, currentIso) {
   if (!Array.isArray(times) || !times.length) return -1;
   const currentHour = String(currentIso || '').slice(0, 13);
-  const found = times.findIndex(time => String(time).slice(0, 13) >= currentHour);
+  const found = times.findIndex(time => String(time).slice(0, 13) === currentHour);
   return found; // Série expirada não deve ser apresentada como leitura atual.
 }
 
@@ -404,7 +404,22 @@ function saveRecentCity(place) {
 }
 
 function setForecastHealth(message,kind='') { const el=$('#forecastHealth'); if(el){el.textContent=message;el.dataset.status=kind;} }
+function renderSourceDiagnostics(reports){
+ const list=$('#sourceDiagnosticList'),summary=$('#sourceDiagnosticSummary');
+ if(!list||!summary)return;
+ const state=window.ClimaSourceDiagnostics.summarize(reports);
+ summary.textContent=`${state.temperatureIndependent}/${state.totalIndependent} com temperatura; ${state.rainfallIndependent}/${state.totalIndependent} com chuva 24h; ${state.failed} falha(s) de rede.`;
+ list.replaceChildren(...reports.map(item=>{
+  const li=document.createElement('li');li.className='source-diagnostic-row';li.dataset.status=item.status;
+  const name=document.createElement('strong');name.textContent=item.label;
+  const why=document.createElement('span');why.textContent=item.reason;
+  const ms=document.createElement('small');ms.textContent=item.elapsedMs===null?'—':item.elapsedMs+' ms';
+  li.append(name,why,ms);return li;
+ }));
+}
 function resetForecastView() {
+ $('#sourceDiagnosticList')?.replaceChildren();
+ setText('#sourceDiagnosticSummary','Aguardando respostas das fontes.');
  const ids=['currentTemp','tempMax','tempMin','feelsLike','humidity','wind','rainNow','todayLabel','confidenceScore','spreadTemp','spreadRain','modelsOnline','rainChance','rain24','nextRain','consensusRain24','worstCaseRain'];
  ids.forEach(id=>setText('#'+id,'—'));
  setText('#weatherDesc','Aguardando dados'); setText('#consensusTitle','Aguardando comparação');
@@ -446,26 +461,39 @@ async function loadPlace(place) {
     hourly: 'temperature_2m,precipitation,weather_code'
   };
 
-  const primaryPromise = fetchJson(primaryUrl, { signal });
-  const modelPromises = MODEL_CONFIG.filter(model => model.type !== 'primary')
-    .map(model => fetchJson(queryUrl(model.api, { ...modelParams, models: model.model }), { signal }));
-
-  const [primaryResult, ...modelResults] = await Promise.allSettled([primaryPromise, ...modelPromises]);
-  if (id !== state.loadingId) return;
+  const timedFetch=url=>{
+    const began=Date.now();
+    return fetchJson(url,{signal}).then(data=>({data,elapsedMs:Date.now()-began}),
+      error=>Promise.reject({error,elapsedMs:Date.now()-began}));
+  };
+  const independentConfigs=MODEL_CONFIG.filter(model=>model.type!=='primary');
+  const primaryPromise=timedFetch(primaryUrl);
+  const modelPromises=independentConfigs.map(model=>timedFetch(queryUrl(model.api,{...modelParams,models:model.model})));
+  const [primaryResult,...modelResults]=await Promise.allSettled([primaryPromise,...modelPromises]);
+  if(id!==state.loadingId)return;
+  const targetHour=primaryResult.status==='fulfilled'?primaryResult.value.data.current?.time||primaryResult.value.data.hourly?.time?.[0]:null;
+  const sourceReports=[primaryResult.status==='fulfilled'?
+    window.ClimaSourceDiagnostics.inspect(primaryResult.value.data,targetHour,'bestmatch','Best Match',primaryResult.value.elapsedMs):
+    window.ClimaSourceDiagnostics.failed('bestmatch','Best Match',primaryResult.reason?.error,primaryResult.reason?.elapsedMs),
+    ...modelResults.map((result,index)=>result.status==='fulfilled'?
+      window.ClimaSourceDiagnostics.inspect(result.value.data,targetHour,independentConfigs[index].id,independentConfigs[index].label,result.value.elapsedMs):
+      window.ClimaSourceDiagnostics.failed(independentConfigs[index].id,independentConfigs[index].label,result.reason?.error,result.reason?.elapsedMs))
+  ];
+  renderSourceDiagnostics(sourceReports);
 
   if (primaryResult.status === 'rejected') {
-    notify('Não foi possível carregar a previsão desta cidade. Tente novamente em instantes. Detalhe: ' + (primaryResult.reason?.message || 'fonte indisponível'), true);
+    notify('Não foi possível carregar a previsão desta cidade. Tente novamente em instantes. Detalhe: ' + (primaryResult.reason?.error?.message || 'fonte indisponível'), true);
     setText('#fetchedAt', 'Indisponível');
     markForecastDone('Fonte principal indisponível. Atualize a consulta.','error');
     return;
   }
 
-  const primaryData = primaryResult.value;
+  const primaryData = primaryResult.value.data;
+  if(!sourceReports[0].usable){notify('Sem dados principais alinhados ao horário da cidade. Atualize a previsão.',true);setText('#fetchedAt','Horário indisponível');markForecastDone('Previsão principal sem horário válido.','error');return;}
   const quality=window.ClimaReliability.assessPrimary(primaryData);
   if(!quality.ok){notify(quality.reason+' Tente atualizar a consulta.',true);
     setText('#fetchedAt','Fonte desatualizada');
     markForecastDone('Previsão desatualizada ou incompleta.','error');return;}
-  const targetHour = primaryData.current?.time || primaryData.hourly?.time?.[0];
   let primarySummary;
   try {
     primarySummary = summarizeDataset(primaryData, 'bestmatch', 'Best Match', targetHour);
@@ -479,9 +507,9 @@ async function loadPlace(place) {
   const modelSummaries = [];
   MODEL_CONFIG.filter(model => model.type !== 'primary').forEach((config, index) => {
     const result = modelResults[index];
-    if (result.status === 'fulfilled') {
+    if (result.status === 'fulfilled' && sourceReports[index+1].usable) {
       try {
-        modelSummaries.push(summarizeDataset(result.value, config.id, config.label, targetHour));
+        modelSummaries.push(summarizeDataset(result.value.data, config.id, config.label, targetHour));
       } catch { /* ignora modelo inválido */ }
     }
   });

@@ -395,3 +395,15 @@ body {background:#091521;background-image:radial-gradient(ellipse 60% 380px at 1
 .forecast-reload:hover{background:rgba(134,227,208,.13)}
 .forecast-reload:disabled{opacity:.45;cursor:wait}
 @media(max-width:480px){.forecast-service-bar{align-items:flex-start;flex-direction:column;gap:6px;margin-top:4px}.forecast-reload{padding:7px 10px}}
+
+/* Painel de diagnósticos v1.2 */
+.source-diagnostics{margin:0 0 14px;padding:12px 14px;background:#102535;border:1px solid #27465a;border-radius:12px;color:#aac5d4;font-size:12px}
+.source-diagnostics summary{cursor:pointer;color:#e3f2f6;font-weight:660}
+#sourceDiagnosticSummary{display:inline-block;margin-left:9px;font-weight:400;color:#9eb8ca}
+.source-diagnostics-list{list-style:none;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.source-diagnostic-row{min-width:0;display:flex;flex-direction:column;gap:4px;padding:10px;background:#0b1d2b;border:1px solid #375167;border-radius:9px}
+.source-diagnostic-row strong{color:#e0f2f8}.source-diagnostic-row small{margin-top:auto;color:#829baa}
+.source-diagnostic-row[data-status="ok"]{border-color:#3c8d78}.source-diagnostic-row[data-status="partial"]{border-color:#a48b52}
+.source-diagnostic-row[data-status="invalid"],.source-diagnostic-row[data-status="error"]{border-color:#9a5e60}
+@media(max-width:950px){.source-diagnostics-list{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.source-diagnostics-list{grid-template-columns:1fr}#sourceDiagnosticSummary{display:block;margin:5px 0}.source-diagnostic-row{display:grid;grid-template-columns:85px 1fr auto}}

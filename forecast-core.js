@@ -25,7 +25,7 @@
     const h=data?.hourly||{}, time=h.time;
     if(!Array.isArray(time))return [];
     const target=timeKey(targetTime);
-    const idx=time.findIndex(t=>timeKey(t)>=target);
+    const idx=time.findIndex(t=>timeKey(t)===target);
     if(idx<0)return [];
     return time.slice(idx,idx+amount).map((time,i)=>({
       time,
@@ -43,7 +43,8 @@
     const aligned=timeKey(current.time)===timeKey(first.time);
     const temp=aligned&&valid(current.temperature_2m)?current.temperature_2m:first.temp;
     const code=aligned&&valid(current.weather_code)?current.weather_code:first.code;
-    const completeRain=list.length===24&&list.every(item=>valid(item.rain));
+    const base=Date.parse(first.time+':00Z');
+    const completeRain=list.length===24&&Number.isFinite(base)&&list.every((item,i)=>valid(item.rain)&&Date.parse(item.time+':00Z')===base+i*3600000);
     const rain24=completeRain?list.reduce((a,x)=>a+x.rain,0):null;
     const chances=list.slice(0,12).map(x=>x.probability).filter(valid);
     return {

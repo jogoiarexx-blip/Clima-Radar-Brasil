@@ -16,7 +16,7 @@ def model(offset):
     return {"current":{"time":times[0],"temperature_2m":27+offset,"weather_code":2,"precipitation":0},"hourly":{"time":times,"temperature_2m":[27+offset for _ in times],"precipitation":[.2 if i%9==0 else 0 for i in range(168)],"weather_code":[2]*168}}
 mocks={"primary":primary,"ecmwf":model(.1),"gfs":model(-.5),"icon":model(.4),"gem":model(-.15)}
 shim='<script>const MOCKS='+json.dumps(mocks,ensure_ascii=False)+';window.fetch=async(url)=>{url=String(url);let type=url.includes("models=ecmwf_ifs")?"ecmwf":url.includes("models=ncep_gfs_seamless")?"gfs":url.includes("models=icon_global")?"icon":url.includes("models=cmc_gem_seamless")?"gem":"primary";if(url.includes("/weather-maps.json"))return {ok:true,json:async()=>({host:"https://tilecache.rainviewer.com",radar:{past:[]}})};if(url.includes("/search"))return {ok:true,json:async()=>({results:[]})};return {ok:true,json:async()=>MOCKS[type]}};</script>'
-for src in ['forecast-core.js','reliability-core.js','app.js','model-compare.js','audit-core.js','validation-core.js','audit-ui.js','network-core.js','network-ui.js','radar-core.js','radar.js','mobile.js']:
+for src in ['forecast-core.js','reliability-core.js','source-diagnostics.js','app.js','model-compare.js','audit-core.js','validation-core.js','audit-ui.js','network-core.js','network-ui.js','radar-core.js','radar.js','mobile.js']:
     html=html.replace(f'<script src="./{src}" defer></script>','<script>'+(root/src).read_text()+'</script>')
 html=html.replace('<script>\n',shim+'\n<script>\n',1) if '<script>\n' in html else html.replace('<script>',shim+'<script>',1)
 with sync_playwright() as p:
