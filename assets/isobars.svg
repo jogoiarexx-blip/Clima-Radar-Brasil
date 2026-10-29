@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 530" width="840" height="530" fill="none">
+ <defs><linearGradient id="l" x1="0" y1="0" x2="800" y2="520" gradientUnits="userSpaceOnUse"><stop stop-color="#9BD4F3" stop-opacity=".42"/><stop offset="1" stop-color="#9BD4F3" stop-opacity=".02"/></linearGradient></defs>
+ <g stroke="url(#l)" stroke-width="1.35">
+  <path d="M65-68C40 20 119 95 210 118c91 23 167-37 266-13S677 229 800 152s106-215 69-263"/>
+  <path d="M47-35C17 62 97 142 193 167s163-35 268-7S663 284 790 210s141-237 94-292"/>
+  <path d="M30 1C1 110 75 186 178 216s158-35 266-5 208 130 340 64 174-254 118-303"/>
+  <path d="M13 42c-24 112 40 203 149 229s160-30 269-4 208 132 346 80 205-254 135-303"/>
+  <path d="M-9 93c-9 116 44 196 153 229s149-23 266 2 214 141 357 96 231-255 148-301"/>
+  <path d="M-28 141c2 121 56 192 164 233s155-15 260 7 216 142 358 112 251-262 159-299"/>
+  <path d="M-35 197c9 125 49 190 161 232s151-10 255 17 220 142 358 126 284-245 179-292"/>
+  <path d="M-43 264c16 129 46 184 164 231s154-8 245 21 219 141 348 139 308-234 200-276"/>
+  <path d="M-48 338c23 141 54 177 166 222s146-8 240 26 219 139 333 152 310-225 227-263"/>
+ </g>
+ <g stroke="#A8DEEC" opacity=".17" stroke-dasharray="2 8"><path d="M325 0v530M540 0v530"/><path d="M0 180h840M0 360h840"/></g>
+ <g fill="#C2ECF2" font-family="sans-serif" font-size="13" opacity=".45"><text x="460" y="175">1012 hPa</text><text x="630" y="355">1008 hPa</text><text x="132" y="381">1016 hPa</text></g>
+</svg>

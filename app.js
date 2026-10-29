@@ -127,7 +127,7 @@ function getCalibration() {
 }
 function setCalibrationState() {
   const calibration = getCalibration();
-  setText('#calibrationState', calibration ? 'Ativa' : 'Sem calibração');
+  setText('#calibrationState', calibration ? 'Salva (até 50 km)' : 'Sem calibração');
   window.ClimaRadarCalibration = calibration;
 }
 window.ClimaRadarSetCalibration = function (payload) {
@@ -197,7 +197,11 @@ function computeConsensus(primarySummary, modelSummaries) {
   const rains = all.map(m => m.rain24).filter(Number.isFinite);
   const medianTemp = median(temperatures);
   const medianRain = median(rains);
-  const calibration = getCalibration();
+  const storedCalibration = getCalibration();
+  const distance = storedCalibration?.coords && state.place
+    ? (typeof window.ClimaAudit?.distanceKm === 'function' ? window.ClimaAudit.distanceKm(state.place.latitude, state.place.longitude, storedCalibration.coords.latitude, storedCalibration.coords.longitude) : Infinity)
+    : Infinity;
+  const calibration = distance <= 50 ? storedCalibration : null;
   const weighted = [];
 
   for (const model of all) {
@@ -269,9 +273,9 @@ function computeConsensus(primarySummary, modelSummaries) {
 }
 
 function confidenceTone(score) {
-  if (score >= 80) return { text: 'Alta confiança', className: 'pill is-good' };
-  if (score >= 55) return { text: 'Confiança moderada', className: 'pill is-warn' };
-  return { text: 'Baixa confiança', className: 'pill is-bad' };
+  if (score >= 80) return { text: 'Acordo alto', className: 'pill is-good' };
+  if (score >= 55) return { text: 'Acordo moderado', className: 'pill is-warn' };
+  return { text: 'Baixo acordo', className: 'pill is-bad' };
 }
 
 function renderCurrent(primaryData, location, consensus) {
@@ -309,7 +313,7 @@ function renderConsensus(consensus) {
   setText('#spreadTemp', Number.isFinite(consensus.tempSpread) ? `${number(consensus.tempSpread, 1)} °C` : '—');
   setText('#spreadRain', Number.isFinite(consensus.rainSpread) ? `${number(consensus.rainSpread, 1)} mm` : '—');
   setText('#modelsOnline', String(consensus.modelsOnline));
-  setText('#calibrationState', consensus.calibrationUsed ? 'Ativa' : 'Sem calibração');
+  setText('#calibrationState', consensus.calibrationUsed ? 'Ativa na região' : getCalibration() ? 'Fora da região' : 'Sem calibração');
 }
 
 function renderRain(primaryData, consensus) {

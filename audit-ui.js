@@ -61,7 +61,7 @@
   }
   function buildCalibration(report) {
     const eligible = report.rows.filter(row => row.result && row.result.nTemp >= 12 && Number.isFinite(row.result.tempMae) && row.result.tempMae > 0);
-    if (!eligible.length) return null;
+    if (eligible.length < 2) return null;
     const scores = eligible.map(row => ({ id: row.id, score: 1 / row.result.tempMae }));
     const total = scores.reduce((acc, item) => acc + item.score, 0) || 1;
     const weights = Object.fromEntries(scores.map(item => [item.id, item.score / total]));
@@ -69,6 +69,7 @@
       version: 1,
       createdAt: new Date().toISOString(),
       station: report.stationName,
+      coords: report.coords,
       start: report.start,
       end: report.end,
       lead: report.lead,
@@ -177,12 +178,12 @@
     if (!lastReport) return;
     const calibration = buildCalibration(lastReport);
     if (!calibration) {
-      status('A auditoria atual não possui dados suficientes para gerar calibração.', 'error');
+      status('São necessários pelo menos dois modelos com 12 horários válidos cada para calibrar os pesos.', 'error');
       return;
     }
     if (typeof window.ClimaRadarSetCalibration === 'function') {
       window.ClimaRadarSetCalibration(calibration);
-      status('Calibração local aplicada ao consenso principal. A previsão foi recalculada com os novos pesos.', 'ok');
+      status('Calibração salva. Os pesos só serão aplicados a cidades até 50 km da estação do CSV; isso não comprova ganho de acerto futuro.', 'ok');
     } else {
       status('A interface principal ainda não está pronta para receber calibração.', 'error');
     }
