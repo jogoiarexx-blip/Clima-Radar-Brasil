@@ -2,733 +2,370 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#091723" />
-  <meta name="description" content="ClimaRadar Brasil: chuva horária, ECMWF, GFS, ICON e auditoria real com medições INMET." />
-  <title>ClimaRadar Brasil — previsão meteorológica comparada</title>
-  <style>
-:root{color-scheme:dark;--bg:#081723;--card:rgba(20,40,55,.78);--card2:rgba(23,48,63,.8);--line:rgba(174,213,238,.13);--text:#f2f9fc;--muted:#94a9bb;--accent:#74e1c7;--blue:#69b5ff;--orange:#f8cf89;--shadow:0 16px 55px rgba(0,0,0,.16)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#173c4f 0%,transparent 38%),radial-gradient(ellipse at 92% 17%,#143549 0%,transparent 40%),#081723;color:var(--text);font:15px/1.5 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}button,input{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}.page-glow{position:absolute;top:0;left:0;width:100%;height:630px;pointer-events:none;opacity:.35;background:radial-gradient(circle at 70% 14%,#156b80 0,transparent 36%);z-index:-1}.layout{width:min(1180px,calc(100% - 44px));margin:auto}.site-header{height:89px;display:flex;align-items:center;justify-content:space-between;gap:22px;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:11px;font-size:22px;font-weight:850;letter-spacing:-.8px;line-height:1}.brand-mark{width:43px;height:43px;display:grid;place-items:center;background:linear-gradient(135deg,#76e8d0,#4ba7d1);color:#052b37;border-radius:13px;box-shadow:0 6px 20px #08ab8c35}.brand small{font-size:9px;letter-spacing:3px;display:block;color:#bcd4df;font-weight:600;margin-top:5px}.accent{color:var(--accent)}nav{display:flex;gap:29px;font-weight:540;font-size:13px;color:#b1c1ce}nav a:hover,.source-card:hover>span:last-child{color:var(--accent)}.header-status{font-size:11px;color:#b8cfd9;white-space:nowrap}.status-dot,.pulse-dot{background:var(--accent);width:7px;height:7px;display:inline-block;border-radius:50%;box-shadow:0 0 0 4px #74e1c71a;margin-right:6px}.intro-row{display:flex;align-items:end;justify-content:space-between;gap:26px;padding:42px 0 28px}.eyebrow{font-size:10px;font-weight:750;letter-spacing:2px;color:var(--accent);display:block;margin-bottom:7px}h1,h2,h3,p{margin:0}h1{font-size:clamp(28px,3.1vw,42px);line-height:1.16;letter-spacing:-1.7px;font-weight:790}h1 em{font-style:normal;color:var(--accent)}.intro-row p{color:var(--muted);margin-top:11px;font-size:13px}.search-wrapper{width:min(100%,365px);position:relative}.search-control{height:47px;display:flex;align-items:center;gap:8px;padding:4px 5px 4px 14px;border:1px solid #436579;background:#162e3d;border-radius:11px;box-shadow:var(--shadow)}.search-control>svg{color:#99b7c8;flex:none}.search-control input{flex:1;min-width:0;border:0;background:none;outline:none;color:white;font-size:13px}.search-control input::placeholder{color:#8099aa}.search-submit{padding:9px 13px;color:#0b2930;background:var(--accent);border:none;border-radius:8px;font-size:12px;font-weight:750}.search-submit:hover{background:#9af6de}.location-btn{display:block;background:none;border:0;color:#a2c3d0;margin:8px 0 0 auto;font-size:12px}.location-btn:hover{color:white}.suggestions{position:absolute;top:51px;z-index:4;background:#1b3746;border:1px solid #3c6778;border-radius:10px;box-shadow:0 15px 35px #0009;left:0;right:0;max-height:280px;overflow:auto;padding:4px}.suggestion{display:flex;align-items:center;gap:10px;width:100%;padding:11px;text-align:left;color:var(--text);border:0;background:none;border-radius:7px;font-size:13px}.suggestion:hover,.suggestion:focus-visible{background:#2b5363}.suggestion span{color:var(--muted);font-size:11px}.hidden{display:none!important}.message{background:#27434b;border:1px solid #548889;padding:12px 16px;margin:0 0 18px;border-radius:9px;color:#e3fff8}.message.error{background:#422c34;border-color:#82535e;color:#ffd7de}.dashboard{display:grid;grid-template-columns:minmax(0,1.58fr) minmax(310px,1fr);gap:17px}.weather-card{background:linear-gradient(145deg,rgba(26,53,69,.87),rgba(15,37,52,.92));border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}.hero{position:relative;overflow:hidden;padding:26px 28px 16px;background:radial-gradient(ellipse at 84% 28%,rgba(29,116,135,.26),transparent 58%),linear-gradient(145deg,#21475a,#102d40 82%)}.hero:after{content:"";pointer-events:none;position:absolute;width:290px;height:290px;border:1px solid rgba(255,255,255,.04);border-radius:100%;top:90px;right:-60px;box-shadow:0 0 0 55px rgba(255,255,255,.016),0 0 0 110px rgba(255,255,255,.013)}.hero>*{position:relative;z-index:1}.hero-top,.section-card-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.small{font-size:11px}.muted{color:var(--muted)}.pill{display:inline-flex;align-items:center;gap:3px;border-radius:100px;font-size:10px;font-weight:700;padding:6px 10px}.pill.soft{color:#bdeee5;background:rgba(91,202,177,.11);border:1px solid rgba(116,225,199,.2)}.location-heading{display:flex;align-items:start;gap:10px;margin-top:21px}.pin{color:var(--accent);font-size:27px;line-height:1}.location-heading h2{font-size:23px;font-weight:720;letter-spacing:-.5px}.location-heading .muted{font-size:12px}.hero-center{display:flex;align-items:end;justify-content:space-between;margin:18px 0 25px}.big-weather{display:flex;align-items:center;gap:15px}.weather-icon{font-size:75px;line-height:1;filter:drop-shadow(0 9px 10px #0003)}.temperature{display:flex;align-items:start;line-height:1;letter-spacing:-6px;font-size:90px;font-weight:550}.temperature .deg{font-size:46px;letter-spacing:0;margin-top:5px}.weather-desc{font-size:14px;color:#d8e5eb;margin-top:6px}.minmax{display:flex;gap:17px;white-space:nowrap;color:#a9c2ce;font-size:12px;padding-bottom:9px}.minmax strong{color:white;font-size:15px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #ffffff25;padding:18px 0 12px;gap:10px}.metrics>div{display:grid;grid-template-columns:20px 1fr;align-items:center;gap:0 7px}.metrics small{color:#a7c1cf;font-size:11px}.metrics strong{grid-column:2;font-size:16px;font-weight:650}.metric-icon{color:var(--accent);grid-row:1/3;font-size:21px}.card-footnote{color:#8caebd;font-size:10px;line-height:1.4}.rain-panel{padding:25px 25px 23px}.section-card-head h3{font-size:22px;letter-spacing:-.5px}.rain-mark{font-size:31px}.rain-risk{display:flex;align-items:center;gap:14px;margin-top:22px}.rain-risk>strong{font-size:54px;line-height:1;letter-spacing:-3px;color:#9de8fa}.rain-risk>div{display:flex;flex-direction:column;gap:5px}.rain-risk span{font-size:12px;color:#d8eaf3;line-height:1.3}.rain-risk small{font-size:11px;color:var(--muted)}.progress-track{height:7px;background:#0c2535;border-radius:20px;overflow:hidden;margin-top:18px}.progress-fill{width:0;background:linear-gradient(90deg,#45aedd,#7ce8f2);height:100%;border-radius:20px;transition:width .3s}.divider{height:1px;background:var(--line);margin:21px 0}.rain-info{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rain-info>div{display:flex;flex-direction:column}.rain-info small,.model-values small{color:var(--muted);font-size:10px;margin-bottom:5px}.rain-info strong{font-size:17px}.radar-notice{display:flex;gap:14px;background:#102e3d;border:1px solid #29596c;padding:16px;border-radius:11px;margin-top:22px}.radar-rings{font-size:26px;color:var(--accent)}.radar-notice strong{font-size:13px}.radar-notice p{font-size:11px;color:#9eb6c2;margin-top:4px;line-height:1.55}.radar-notice a{display:inline-block;color:var(--accent);font-weight:700;margin-top:8px;font-size:12px}.data-section{margin-top:35px;scroll-margin-top:22px}.section-heading{display:flex;justify-content:space-between;align-items:end;gap:15px;margin-bottom:15px}.section-heading h2{font-size:22px;letter-spacing:-.5px}.chart-container{padding:22px 25px 19px;overflow:hidden}.chart-legend{display:flex;justify-content:flex-end;gap:20px;color:#bdced8;font-size:11px}.chart-legend>span{display:flex;align-items:center;gap:7px}.legend-line{width:18px;height:2px;background:var(--accent);display:inline-block}.legend-bars{width:12px;height:10px;background:rgba(80,163,221,.55);border-radius:2px;display:inline-block}.hourly-chart{width:100%;overflow:hidden;min-height:183px}.hourly-chart svg{display:block;width:100%;height:auto;max-height:220px}.skeleton-chart{height:170px;margin-top:10px;background:linear-gradient(100deg,transparent,#ffffff08,transparent);border-radius:8px}.hourly-items{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:7px;border-top:1px solid var(--line);padding-top:13px}.hourly-item{text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px}.hourly-item .time{font-size:12px;color:#bed0db}.hourly-item .wx{font-size:22px}.hourly-item .value{font-size:15px;font-weight:700}.hourly-item .chance{font-size:11px;color:#7fcaee}.model-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.model-card{padding:18px 20px}.model-head{display:flex;gap:12px;align-items:center}.model-icon{width:39px;height:39px;border-radius:11px;background:#214d4e;color:#78e2c1;display:grid;place-items:center;font-weight:800;font-size:18px}.model-icon.blue{background:#203f5c;color:#69baff}.model-icon.purple{background:#383957;color:#aaa3f9}.model-head h3{font-size:15px}.model-head p{color:var(--muted);font-size:11px}.model-status{margin-left:auto;font-size:10px;color:#92ccbb}.model-values{display:grid;grid-template-columns:1fr 1fr;margin-top:23px;gap:12px}.model-values>div{display:flex;flex-direction:column}.model-values strong{font-size:25px;font-weight:690;letter-spacing:-.7px}.consensus{display:flex;align-items:center;gap:15px;margin-top:13px;padding:17px 20px}.consensus-icon{width:38px;height:38px;border-radius:11px;background:rgba(107,228,190,.13);display:grid;place-items:center;flex:none;font-size:25px;color:var(--accent)}.consensus strong{font-size:13px}.consensus p{font-size:12px;color:var(--muted);margin-top:3px}.method-note{font-size:11px;color:#96adba;line-height:1.7;margin:11px 4px}.daily-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:11px}.daily-card{padding:17px 9px;text-align:center}.daily-card h3{font-size:12px;font-weight:700}.daily-card .day-icon{display:block;font-size:33px;margin:14px 0 11px}.daily-card .day-temps{font-size:14px;font-weight:800}.daily-card .day-temps span{color:#92aabb;font-weight:500}.daily-card .day-rain{display:block;margin-top:9px;color:#91cef2;font-size:11px}.daily-placeholder{padding:20px}.source-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.source-card{padding:20px;transition:transform .15s,border-color .15s;min-height:195px}.source-card:hover{transform:translateY(-2px);border-color:#55887d}.source-graphic{font-size:28px;display:block;margin-bottom:15px}.source-card h3{font-size:15px}.source-card p{font-size:11px;color:var(--muted);margin:6px 0 13px;min-height:49px}.source-card>span:last-child{color:var(--accent);font-size:12px;font-weight:700}footer{border-top:1px solid var(--line);padding:28px 0 40px;margin-top:45px;display:flex;justify-content:space-between;gap:20px;color:var(--muted);font-size:11px}footer>div:first-child{display:flex;flex-direction:column;gap:4px}footer strong{color:white;font-size:13px}footer a{text-decoration:underline;text-underline-offset:3px}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #85e3d0;outline-offset:3px}
-@media(max-width:1050px){nav{gap:13px}.header-status{display:none}.temperature{font-size:73px}.temperature .deg{font-size:35px}.weather-icon{font-size:65px}.minmax{flex-direction:column;gap:3px}.hero{padding:23px}.metrics{gap:4px}.metrics>div{grid-template-columns:1fr}.metrics .metric-icon{display:none}.metrics strong{grid-column:1}.rain-panel{padding:23px}.source-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:760px){.layout{width:min(100% - 28px,620px)}.site-header{height:70px}.brand{font-size:19px}.brand-mark{width:39px;height:39px}.site-header nav{display:none}.intro-row{display:block;padding:28px 0 23px}.intro-row h1{font-size:32px}.search-wrapper{margin-top:22px;width:100%}.dashboard{grid-template-columns:1fr}.hero{min-height:350px}.rain-panel{min-height:initial}.model-grid{grid-template-columns:1fr}.model-values{margin-top:14px}.daily-grid{grid-template-columns:repeat(7,minmax(116px,1fr));overflow-x:auto;padding-bottom:5px}.source-grid{grid-template-columns:repeat(2,1fr)}.section-heading{align-items:start}.section-heading>.small{display:none}.hourly-items{grid-template-columns:repeat(6,1fr)}footer{flex-direction:column}.hero-center{margin-top:20px}.temperature{font-size:82px}}
-@media(max-width:420px){.hero-top{align-items:flex-start}.hero-top>.small{max-width:110px;text-align:right}.hero{padding:20px 17px}.rain-panel{padding:20px}.weather-icon{font-size:60px}.temperature{font-size:69px}.temperature .deg{font-size:32px}.big-weather{gap:10px}.minmax{font-size:11px}.metrics small{font-size:10px}.metrics strong{font-size:14px}.rain-risk>strong{font-size:45px}.source-grid{grid-template-columns:1fr}.source-card{min-height:initial}.source-card p{min-height:initial}.hourly-chart{min-height:140px}.hourly-items{grid-template-columns:repeat(3,1fr);row-gap:14px}.chart-container{padding:15px}}
-
-/* Auditoria meteorológica v0.2 */
-.audit-shell{padding:29px 31px}.audit-intro{display:flex;gap:16px;align-items:flex-start;margin-bottom:24px}.audit-symbol{width:49px;height:49px;flex:0 0 49px;display:grid;place-items:center;border:1px solid #5aafbd;border-radius:14px;color:#8de7d7;background:#1a4755;font-size:29px}.audit-intro h3{font-size:19px;margin:0 0 6px}.audit-intro p,.audit-disclaimer{font-size:13px;line-height:1.6;color:var(--muted)}.audit-fields{display:grid;grid-template-columns:2fr 1fr 1fr 1.1fr;gap:14px;align-items:start}.audit-input-label{display:grid;gap:7px;font-size:12px;color:#d5e8f1;font-weight:650}.audit-input-label input,.audit-input-label select{height:44px;width:100%;min-width:0;background:#102633;border:1px solid #3d6573;border-radius:9px;color:#f5f9fc;padding:9px 10px;outline-offset:2px}.audit-input-label input[type=file]{font-size:11px;padding:9px}.audit-input-label input[type=file]::file-selector-button{border:0;border-radius:6px;padding:5px 7px;margin-right:8px;color:#062c38;background:#91dcd3;font-weight:700;cursor:pointer}.audit-input-label small{color:var(--muted);font-weight:400;line-height:1.5}.audit-input-label small a{text-decoration:underline;color:#83ead1}.audit-file-info{font-size:12px;color:#a9c6d3;margin:15px 0 0}.audit-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.audit-actions button{border:1px solid #65c8bb;background:#73e0c6;border-radius:9px;color:#07313c;font-weight:760;padding:11px 16px;font-size:13px}.audit-actions button+button{background:#143846;border-color:#417888;color:#b9e9e7}.audit-actions button:disabled{opacity:.45;cursor:not-allowed}.audit-feedback{padding:9px 12px;background:#102a3a;border-left:3px solid #668a9c;margin-top:16px;border-radius:6px;color:#bdd2dd;font-size:12px}.audit-feedback.ok{border-color:#72dac4}.audit-feedback.error{border-color:#efba84}.audit-result{padding-top:8px}.audit-result h3{font-size:17px;color:#eaf9fa;margin-top:20px}.audit-result>p{font-size:13px;color:#acc8d4;line-height:1.6;margin-top:7px}.audit-table-scroll{overflow-x:auto;margin-top:15px;border:1px solid #315565;border-radius:10px}.audit-table{width:100%;border-collapse:collapse;font-size:12px;text-align:left;min-width:660px}.audit-table th{color:#d2f3ef;background:#143644;font-size:11px;font-weight:750}.audit-table td,.audit-table th{padding:12px;border-bottom:1px solid #355769}.audit-table tr:last-child td{border:0}.audit-table .best-model td:first-child{font-weight:800;color:#8feacb}.audit-disclaimer{margin-top:25px;padding-top:16px;border-top:1px solid #26465c}.audit-scope{color:#95b7c5!important}
-@media(max-width:1080px){.audit-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.audit-shell{padding:22px 16px}.audit-fields{grid-template-columns:1fr}.audit-intro{gap:10px}.audit-symbol{width:35px;height:35px;flex-basis:35px;font-size:24px}}
-
-</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#08111C" />
+  <meta name="description" content="ClimaRadar Brasil compara diferentes modelos meteorológicos e entrega um consenso operacional com transparência sobre divergência e confiança." />
+  <title>ClimaRadar Brasil</title>
+  <link rel="preconnect" href="https://api.open-meteo.com" />
+  <link rel="preconnect" href="https://geocoding-api.open-meteo.com" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="page-glow" aria-hidden="true"></div>
-  <div class="layout">
-    <header class="site-header">
-      <a class="brand" href="#inicio" aria-label="ClimaRadar Brasil — início">
-        <span class="brand-mark" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 14a9 9 0 0 1 18 0"/><path d="M6 14a6 6 0 0 1 12 0"/><path d="M9 14a3 3 0 0 1 6 0"/><path d="M12 14v6"/></svg></span>
-        <span>Clima<span class="accent">Radar</span><small>BRASIL</small></span>
+  <div class="page-shell">
+    <header class="site-header site-width">
+      <a class="brand" href="#top" aria-label="ClimaRadar Brasil">
+        <img src="./assets/brand-mark.svg" alt="Marca do ClimaRadar Brasil" width="52" height="52" />
+        <span>
+          <strong>ClimaRadar Brasil</strong>
+          <small>PREVISÃO MULTIMODELO</small>
+        </span>
       </a>
-      <nav aria-label="Navegação principal">
-        <a href="#inicio">Visão geral</a>
-        <a href="#horas">Próximas horas</a>
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a href="#painel">Painel</a>
         <a href="#modelos">Modelos</a>
         <a href="#auditoria">Auditoria</a>
-        <a href="#fontes">Fontes oficiais</a>
+        <a href="#fontes">Fontes</a>
       </nav>
-      <span class="header-status"><span class="status-dot"></span> Previsão por dados meteorológicos</span>
+      <div class="header-meta">
+        <span class="live-indicator"><span></span> atualização em tempo real</span>
+      </div>
     </header>
 
-    <main id="inicio">
-      <div class="intro-row">
-        <div><span class="eyebrow">METEOROLOGIA EM DETALHES</span><h1>O tempo, com <em>mais contexto.</em></h1><p>Veja a previsão, compare modelos e acompanhe as fontes oficiais em um só lugar.</p></div>
-        <div class="search-wrapper">
-          <form id="searchForm" class="search-control" autocomplete="off">
-            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
-            <input id="cityInput" aria-label="Pesquisar cidade" placeholder="Pesquisar cidade no Brasil..." type="search" minlength="2" required />
-            <button type="submit" aria-label="Pesquisar" class="search-submit">Buscar</button>
-          </form>
-          <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="Sugestões de cidades"></div>
-          <button id="geolocate" class="location-btn" type="button"><span aria-hidden="true">◎</span> Usar minha localização</button>
+    <main class="site-width" id="top">
+      <section class="hero" id="painel">
+        <div class="hero-copy">
+          <p class="eyebrow">CONSENSO OPERACIONAL</p>
+          <h1>Previsão mais criteriosa, com comparação entre modelos antes de mostrar o resultado final.</h1>
+          <p class="hero-text">O ClimaRadar reúne múltiplos sistemas meteorológicos, mede a divergência entre eles e destaca a confiança da previsão. Quando houver calibração por auditoria local com dados do INMET, os pesos dos modelos podem ser ajustados.</p>
+          <ul class="hero-points">
+            <li>Comparação entre ECMWF, GFS, ICON e Best Match</li>
+            <li>Consenso ponderado com leitura de divergência</li>
+            <li>Auditoria local com arquivos CSV do INMET</li>
+          </ul>
         </div>
-      </div>
-      <div id="message" class="message hidden" role="status" aria-live="polite"></div>
-      <div class="dashboard">
-        <section class="hero weather-card" aria-label="Condições atuais estimadas">
-          <div class="hero-top"><span class="pill soft"><span class="pulse-dot"></span> Condição meteorológica estimada</span><span id="fetchedAt" class="muted small">Atualizando...</span></div>
-          <div class="location-heading"><span class="pin">⌖</span><div><h2 id="cityName">Selecionando cidade...</h2><span id="todayLabel" class="muted">—</span></div></div>
-          <div class="hero-center">
-            <div class="big-weather"><span id="heroIcon" class="weather-icon" aria-hidden="true">☁️</span><div><div class="temperature"><span id="currentTemp">—</span><span class="deg">°</span></div><div id="weatherDesc" class="weather-desc">Buscando previsão...</div></div></div>
-            <div class="minmax"><span>Máx. <strong id="tempMax">—</strong>°</span><span>Min. <strong id="tempMin">—</strong>°</span></div>
-          </div>
-          <div class="metrics">
-            <div><span class="metric-icon">◉</span><small>Sensação</small><strong id="feelsLike">—</strong></div>
-            <div><span class="metric-icon">◌</span><small>Umidade</small><strong id="humidity">—</strong></div>
-            <div><span class="metric-icon">↗</span><small>Vento</small><strong id="wind">—</strong></div>
-            <div><span class="metric-icon">☂</span><small>Chuva agora*</small><strong id="rainNow">—</strong></div>
-          </div>
-          <p class="card-footnote">*Dados atuais estimados pelo modelo meteorológico, não por estação local. Temperatura e chuva podem variar dentro do município.</p>
-        </section>
-
-        <section class="rain-panel weather-card" aria-label="Previsão de chuva">
-          <div class="section-card-head"><div><span class="eyebrow">CHUVA NA REGIÃO</span><h3>Vai chover?</h3></div><span class="rain-mark" aria-hidden="true">☔</span></div>
-          <div class="rain-risk"><strong id="rainChance">—</strong><div><span>Maior chance de chuva nas próximas 12h</span><small id="riskLabel">Aguardando dados meteorológicos</small></div></div>
-          <div class="progress-track"><div id="rainBar" class="progress-fill"></div></div>
-          <div class="divider"></div>
-          <div class="rain-info"><div><small>Precipitação prevista (24h)</small><strong id="rain24">—</strong></div><div><small>Próxima janela de chuva</small><strong id="nextRain">—</strong></div></div>
-          <div class="radar-notice"><span class="radar-rings">◉</span><div><strong>Radar ao vivo</strong><p>Confira as nuvens de chuva na cobertura dos radares de Bauru e Presidente Prudente.</p><a href="https://www.ipmetradar.com.br/home/webadm/2mobileGis.php" target="_blank" rel="noopener noreferrer">Abrir radar do IPMet ↗</a></div></div>
-        </section>
-      </div>
-
-      <section class="data-section" id="horas">
-        <div class="section-heading"><div><span class="eyebrow">PREVISÃO POR HORA</span><h2>Próximas 24 horas</h2></div><span class="muted small">Previsão de modelos, sujeita a mudanças</span></div>
-        <div class="chart-container weather-card"><div class="chart-legend"><span><i class="legend-line"></i> Temperatura</span><span><i class="legend-bars"></i> Probabilidade de chuva</span></div><div id="hourlyChart" class="hourly-chart" aria-label="Gráfico horário de temperatura e chance de chuva"><div class="skeleton-chart"></div></div><div id="hourlyItems" class="hourly-items" aria-label="Previsão em horários selecionados"></div></div>
-      </section>
-
-      <section class="data-section" id="modelos">
-        <div class="section-heading"><div><span class="eyebrow">CONFERÊNCIA CRUZADA</span><h2>O que dizem os modelos?</h2></div><span class="small muted">Temperatura e chuva acumulada nas próximas 24h</span></div>
-        <div class="model-grid">
-          <article class="model-card weather-card" data-model="ecmwf"><div class="model-head"><span class="model-icon">E</span><div><h3>ECMWF</h3><p>IFS HRES 9 km · Europa</p></div><span class="model-status">...</span></div><div class="model-values"><div><small>Temperatura próxima hora</small><strong class="model-temp">—</strong></div><div><small>Chuva em 24h</small><strong class="model-rain">—</strong></div></div></article>
-          <article class="model-card weather-card" data-model="gfs"><div class="model-head"><span class="model-icon blue">G</span><div><h3>GFS</h3><p>Modelo americano · NOAA</p></div><span class="model-status">...</span></div><div class="model-values"><div><small>Temperatura próxima hora</small><strong class="model-temp">—</strong></div><div><small>Chuva em 24h</small><strong class="model-rain">—</strong></div></div></article>
-          <article class="model-card weather-card" data-model="icon"><div class="model-head"><span class="model-icon purple">I</span><div><h3>ICON</h3><p>Modelo alemão · DWD</p></div><span class="model-status">...</span></div><div class="model-values"><div><small>Temperatura próxima hora</small><strong class="model-temp">—</strong></div><div><small>Chuva em 24h</small><strong class="model-rain">—</strong></div></div></article>
-        </div>
-        <div class="consensus weather-card"><div class="consensus-icon">≋</div><div><strong id="consensusTitle">Comparação indisponível</strong><p id="consensusText">Aguarde o carregamento dos modelos.</p></div></div>
-        <p class="method-note">A comparação exibe divergências entre modelos, <strong>não representa taxa de acerto nem probabilidade estatística de precisão</strong>. As previsões podem compartilhar dados de origem. A seção de auditoria abaixo permite confrontar previsões anteriores com observações do INMET.</p>
-      </section>
-
-      <section class="data-section" id="auditoria" aria-label="Auditoria de precisão das previsões">
-        <div class="section-heading"><div><span class="eyebrow">PRECISÃO COMPROVÁVEL</span><h2>Auditoria meteorológica</h2></div><span class="muted small">Previsões arquivadas × observações da estação</span></div>
-        <div class="audit-shell weather-card">
-          <div class="audit-intro"><span class="audit-symbol" aria-hidden="true">◈</span><div><h3>Qual modelo acertou mais?</h3><p>Importe um CSV horário de uma estação automática INMET. Comparamos as leituras com previsões feitas 24, 48 ou 72 horas antes, usando até 14 dias do arquivo. Os dados permanecem no seu navegador.</p></div></div>
-          <form id="auditForm">
-            <div class="audit-fields">
-              <label class="audit-input-label file-field"><span>1 · Arquivo CSV da estação</span><input id="stationCsv" type="file" accept=".csv,.txt,text/csv,text/plain" aria-describedby="stationInfo" /><small>Use o CSV de uma estação, extraído do <a href="https://portal.inmet.gov.br/dadoshistoricos" target="_blank" rel="noopener noreferrer">INMET (dados históricos)</a>.</small></label>
-              <label class="audit-input-label"><span>Latitude da estação</span><input id="stationLat" type="text" inputmode="decimal" placeholder="Ex.: -21,169" /></label>
-              <label class="audit-input-label"><span>Longitude da estação</span><input id="stationLon" type="text" inputmode="decimal" placeholder="Ex.: -47,809" /></label>
-              <label class="audit-input-label"><span>Antecedência da previsão</span><select id="auditLead"><option value="1">24 horas antes</option><option value="2">48 horas antes</option><option value="3">72 horas antes</option></select></label>
+        <div class="hero-panel weather-card">
+          <div class="search-head">
+            <div>
+              <span class="mini-label">Pesquisa de localidade</span>
+              <h2>Buscar cidade</h2>
             </div>
-            <p id="stationInfo" class="audit-file-info">Nenhum CSV importado. As coordenadas vêm do cabeçalho do INMET, quando presentes.</p>
-            <div class="audit-actions"><button id="compareAudit" type="submit">Comparar os três modelos</button><button id="exportAudit" type="button" disabled>Exportar relatório CSV</button></div>
-            <div id="auditStatus" class="audit-feedback" role="status" aria-live="polite">Aguardando arquivo de observações.</div>
-          </form>
-          <div id="auditResult" class="audit-result hidden">
-            <div class="divider"></div><h3 id="auditHeadline">Aguardando auditoria</h3><p id="auditInterpretation"></p>
-            <div class="audit-table-scroll"><table class="audit-table"><thead><tr><th>Modelo</th><th>Horas avaliadas</th><th>Erro médio temp.</th><th>Viés temp.</th><th>Erro médio chuva</th><th>Status</th></tr></thead><tbody id="auditBody"></tbody></table></div>
-            <p id="auditScope" class="audit-scope"></p>
+            <span class="search-note">Brasil</span>
           </div>
-          <p class="audit-disclaimer">Amostra local, sem validação independente dos sensores. A classificação exige pelo menos 12 horários de temperatura. Chuva é avaliada em mm/h, sem confundir desvio médio com chance de chover. Não é índice universal de acerto; estações, altitudes e horários diferentes podem alterar os resultados.</p>
+          <form id="searchForm" class="search-form" autocomplete="off">
+            <label class="search-input-wrap" for="cityInput">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4a6.5 6.5 0 1 1 0 13a6.5 6.5 0 0 1 0-13Zm0 2a4.5 4.5 0 1 0 0 9a4.5 4.5 0 0 0 0-9Zm8.91 11.5 2.59 2.59-1.41 1.41L18 18.91v-.5l-.17-.17a8.46 8.46 0 0 1-5.33 1.86A8.5 8.5 0 1 1 21 11.5a8.46 8.46 0 0 1-1.86 5.33l.17.17h.5Z" fill="currentColor"/></svg>
+              <input id="cityInput" name="city" type="text" placeholder="Ex.: São Joaquim da Barra" aria-describedby="searchHelp" />
+              <button class="btn btn-primary" type="submit">Consultar</button>
+            </label>
+            <p id="searchHelp" class="search-help">Busque uma cidade para montar a previsão multimodelo.</p>
+            <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="Sugestões de cidades"></div>
+          </form>
+          <button id="useLocation" class="ghost-button" type="button">Usar minha localização</button>
+          <div id="message" class="message hidden" role="status" aria-live="polite"></div>
+        </div>
+        <img class="hero-art" src="./assets/hero-pattern.svg" alt="Ilustração abstrata do painel meteorológico" />
+      </section>
+
+      <section class="overview-grid">
+        <article class="weather-card current-card">
+          <div class="card-topline">
+            <div>
+              <p class="mini-label">Previsão principal</p>
+              <h2 id="cityName">Carregando…</h2>
+            </div>
+            <span class="pill" id="confidenceBadge">Calculando confiança</span>
+          </div>
+          <p class="current-date" id="todayLabel">—</p>
+          <div class="current-main">
+            <div class="current-symbol" id="heroIcon" aria-hidden="true"></div>
+            <div>
+              <div class="current-temp"><span id="currentTemp">—</span><span class="deg">°C</span></div>
+              <p class="current-desc" id="weatherDesc">Aguardando dados</p>
+              <p class="current-subdesc" id="consensusSummary">O consenso operacional será exibido após comparar os modelos.</p>
+            </div>
+          </div>
+          <div class="metric-grid">
+            <div class="metric"><span>Máxima / Mínima</span><strong><span id="tempMax">—</span>° / <span id="tempMin">—</span>°</strong></div>
+            <div class="metric"><span>Sensação térmica</span><strong id="feelsLike">—</strong></div>
+            <div class="metric"><span>Umidade</span><strong id="humidity">—</strong></div>
+            <div class="metric"><span>Vento</span><strong id="wind">—</strong></div>
+            <div class="metric"><span>Chuva agora</span><strong id="rainNow">—</strong></div>
+            <div class="metric"><span>Atualizado</span><strong id="fetchedAt">—</strong></div>
+          </div>
+          <div class="card-footnote">Resultado principal construído a partir de um consenso operacional entre modelos disponíveis. Em caso de falha de algum modelo, o sistema reduz seu peso automaticamente.</div>
+        </article>
+
+        <article class="weather-card consensus-card">
+          <div class="card-topline">
+            <div>
+              <p class="mini-label">Leitura de confiança</p>
+              <h2 id="consensusTitle">Aguardando comparação</h2>
+            </div>
+            <span class="confidence-score"><span id="confidenceScore">—</span><small>/100</small></span>
+          </div>
+          <p class="consensus-text" id="consensusText">Assim que os modelos forem consultados, o ClimaRadar mede a divergência para indicar estabilidade ou incerteza.</p>
+          <div class="consensus-stats">
+            <div><span>Divergência térmica</span><strong id="spreadTemp">—</strong></div>
+            <div><span>Divergência de chuva</span><strong id="spreadRain">—</strong></div>
+            <div><span>Modelos válidos</span><strong id="modelsOnline">—</strong></div>
+            <div><span>Calibração local</span><strong id="calibrationState">Sem calibração</strong></div>
+          </div>
+          <div class="explain-box">
+            <h3>Como a previsão é definida</h3>
+            <p>O resultado final usa pesos-base por modelo, reduz a influência de previsões muito fora da média e aumenta a confiança quando a convergência entre os modelos é alta.</p>
+          </div>
+        </article>
+
+        <article class="weather-card rain-card">
+          <div class="card-topline">
+            <div>
+              <p class="mini-label">Chuva</p>
+              <h2>Próximas horas</h2>
+            </div>
+          </div>
+          <div class="rain-score-row">
+            <div>
+              <span class="rain-kicker">Risco estimado</span>
+              <strong id="rainChance">—</strong>
+              <p id="riskLabel">Aguardando leitura</p>
+            </div>
+            <div class="rain-meter"><span id="rainBar"></span></div>
+          </div>
+          <div class="consensus-stats compact">
+            <div><span>Acumulado 24h</span><strong id="rain24">—</strong></div>
+            <div><span>Próxima chuva</span><strong id="nextRain">—</strong></div>
+            <div><span>Consenso 24h</span><strong id="consensusRain24">—</strong></div>
+            <div><span>Maior cenário</span><strong id="worstCaseRain">—</strong></div>
+          </div>
+          <a class="inline-link" href="https://www.ipmetradar.com.br/home/webadm/2mobileGis.php" target="_blank" rel="noopener noreferrer">Abrir radar oficial do IPMet</a>
+        </article>
+      </section>
+
+      <section class="section-block" id="modelos">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">COMPARAÇÃO ENTRE SISTEMAS</p>
+            <h2>Modelos consultados antes do resultado final</h2>
+          </div>
+          <p class="section-caption">Cada cartão mostra a leitura do respectivo modelo para a temperatura corrente e a chuva acumulada nas próximas 24 horas.</p>
+        </div>
+        <div class="model-grid">
+          <article class="weather-card model-card" data-model="bestmatch">
+            <div class="model-head">
+              <div class="model-badge">BM</div>
+              <div><h3>Best Match</h3><p>Combinação operacional do provedor</p></div>
+              <span class="model-status">Aguardando</span>
+            </div>
+            <div class="model-values">
+              <div><span>Temperatura</span><strong class="model-temp">—</strong></div>
+              <div><span>Chuva 24h</span><strong class="model-rain">—</strong></div>
+            </div>
+          </article>
+          <article class="weather-card model-card" data-model="ecmwf">
+            <div class="model-head">
+              <div class="model-badge">EC</div>
+              <div><h3>ECMWF</h3><p>IFS global</p></div>
+              <span class="model-status">Aguardando</span>
+            </div>
+            <div class="model-values">
+              <div><span>Temperatura</span><strong class="model-temp">—</strong></div>
+              <div><span>Chuva 24h</span><strong class="model-rain">—</strong></div>
+            </div>
+          </article>
+          <article class="weather-card model-card" data-model="gfs">
+            <div class="model-head">
+              <div class="model-badge">GF</div>
+              <div><h3>GFS</h3><p>NOAA global</p></div>
+              <span class="model-status">Aguardando</span>
+            </div>
+            <div class="model-values">
+              <div><span>Temperatura</span><strong class="model-temp">—</strong></div>
+              <div><span>Chuva 24h</span><strong class="model-rain">—</strong></div>
+            </div>
+          </article>
+          <article class="weather-card model-card" data-model="icon">
+            <div class="model-head">
+              <div class="model-badge">IC</div>
+              <div><h3>ICON</h3><p>DWD global</p></div>
+              <span class="model-status">Aguardando</span>
+            </div>
+            <div class="model-values">
+              <div><span>Temperatura</span><strong class="model-temp">—</strong></div>
+              <div><span>Chuva 24h</span><strong class="model-rain">—</strong></div>
+            </div>
+          </article>
         </div>
       </section>
 
-      <section class="data-section" id="semana"><div class="section-heading"><div><span class="eyebrow">PLANEJE SEUS DIAS</span><h2>Próximos 7 dias</h2></div><span class="small muted">Dados do modelo combinado Open-Meteo</span></div><div id="dailyCards" class="daily-grid"><div class="weather-card daily-placeholder">Carregando...</div></div></section>
+      <section class="section-block">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">LEITURA HORÁRIA</p>
+            <h2>Próximas 24 horas</h2>
+          </div>
+          <div class="legend-row">
+            <span><i class="legend-swatch line"></i> Temperatura</span>
+            <span><i class="legend-swatch bar"></i> Chuva estimada</span>
+          </div>
+        </div>
+        <article class="weather-card chart-card">
+          <div id="hourlyChart" class="hourly-chart"><div class="skeleton-chart"></div></div>
+          <div id="hourlyItems" class="hourly-items"></div>
+        </article>
+      </section>
 
-      <section class="data-section" id="fontes"><div class="section-heading"><div><span class="eyebrow">TRANSPARÊNCIA</span><h2>Fontes e monitoramento oficial</h2></div></div>
+      <section class="section-block">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">TENDÊNCIA SEMANAL</p>
+            <h2>Próximos 7 dias</h2>
+          </div>
+          <p class="section-caption">Panorama diário construído com a série principal do provedor e contextualizado pelo consenso multimodelo.</p>
+        </div>
+        <div id="dailyCards" class="daily-grid">
+          <article class="weather-card daily-card placeholder-card">Carregando…</article>
+        </div>
+      </section>
+
+      <section class="section-block methodology-grid">
+        <article class="weather-card methodology-card">
+          <div class="section-heading small-gap">
+            <div>
+              <p class="eyebrow">METODOLOGIA</p>
+              <h2>Como o consenso é calculado</h2>
+            </div>
+          </div>
+          <ol class="steps-list">
+            <li>O sistema consulta vários modelos com a mesma coordenada.</li>
+            <li>Calcula a média ponderada e a mediana para reduzir leituras fora do padrão.</li>
+            <li>Se um modelo divergir muito, seu peso diminui automaticamente.</li>
+            <li>A confiança final cresce quando a divergência térmica e de chuva é baixa.</li>
+            <li>Se houver auditoria local válida, os pesos podem ser calibrados pelo erro observado.</li>
+          </ol>
+        </article>
+        <article class="weather-card methodology-card">
+          <div class="section-heading small-gap">
+            <div>
+              <p class="eyebrow">TRANSPARÊNCIA</p>
+              <h2>O que este site faz — e o que não faz</h2>
+            </div>
+          </div>
+          <ul class="bullet-list">
+            <li>Mostra quando os modelos concordam e quando estão instáveis.</li>
+            <li>Não apresenta precisão “inventada” nem promete acerto absoluto.</li>
+            <li>Não substitui avisos oficiais do INMET, Defesa Civil ou radares meteorológicos.</li>
+            <li>Permite auditoria local com medições reais para melhorar o uso do sistema.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="section-block" id="auditoria">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">AUDITORIA COM MEDIÇÕES REAIS</p>
+            <h2>Comparar modelos com CSV horário do INMET</h2>
+          </div>
+          <p class="section-caption">Use a auditoria para descobrir qual modelo foi melhor na sua região e, se quiser, aplicar a calibração local ao consenso principal.</p>
+        </div>
+        <article class="weather-card audit-panel">
+          <form id="auditForm" class="audit-form">
+            <div class="field-group file-field">
+              <label for="stationCsv">CSV horário da estação</label>
+              <input id="stationCsv" type="file" accept=".csv,text/csv" />
+              <p id="stationInfo" class="field-help">Nenhum arquivo importado.</p>
+            </div>
+            <div class="field-group">
+              <label for="stationLat">Latitude da estação</label>
+              <input id="stationLat" type="text" inputmode="decimal" placeholder="Ex.: -20.5500" />
+            </div>
+            <div class="field-group">
+              <label for="stationLon">Longitude da estação</label>
+              <input id="stationLon" type="text" inputmode="decimal" placeholder="Ex.: -47.4000" />
+            </div>
+            <div class="field-group">
+              <label for="auditLead">Antecedência da previsão</label>
+              <select id="auditLead">
+                <option value="1">24 horas antes</option>
+                <option value="2">48 horas antes</option>
+                <option value="3">72 horas antes</option>
+              </select>
+            </div>
+            <div class="audit-actions">
+              <button id="compareAudit" class="btn btn-primary" type="submit">Comparar modelos</button>
+              <button id="applyAuditCalibration" class="btn btn-secondary" type="button" disabled>Aplicar calibração</button>
+              <button id="clearAuditCalibration" class="btn btn-secondary" type="button">Limpar calibração</button>
+              <button id="exportAudit" class="btn btn-secondary" type="button" disabled>Exportar relatório</button>
+            </div>
+          </form>
+          <div id="auditStatus" class="audit-feedback">Importe um CSV do INMET para iniciar.</div>
+          <section id="auditResult" class="audit-result hidden">
+            <div class="audit-summary">
+              <h3 id="auditHeadline">Sem análise</h3>
+              <p id="auditInterpretation">A classificação será exibida após a comparação.</p>
+              <p id="auditScope" class="field-help"></p>
+            </div>
+            <div class="table-wrap">
+              <table class="audit-table">
+                <thead>
+                  <tr><th>Modelo</th><th>Horas válidas</th><th>Erro médio temp.</th><th>Bias temp.</th><th>Erro médio chuva</th><th>Status</th></tr>
+                </thead>
+                <tbody id="auditBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </article>
+      </section>
+
+      <section class="section-block" id="fontes">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">FONTES E MONITORAMENTO</p>
+            <h2>Referências complementares</h2>
+          </div>
+        </div>
         <div class="source-grid">
-          <a href="https://www.ipmetradar.com.br/home/webadm/2mobileGis.php" rel="noopener noreferrer" target="_blank" class="source-card weather-card"><span class="source-graphic">📡</span><h3>IPMet / Unesp</h3><p>Radar meteorológico e deslocamento das chuvas. Cobertura regional.</p><span>Consultar radar ↗</span></a>
-          <a href="https://alertas2.inmet.gov.br/" rel="noopener noreferrer" target="_blank" class="source-card weather-card"><span class="source-graphic">⚠️</span><h3>INMET</h3><p>Avisos meteorológicos oficiais de chuvas intensas, ventos e outros riscos.</p><span>Consultar alertas ↗</span></a>
-          <a href="https://www.cptec.inpe.br/" rel="noopener noreferrer" target="_blank" class="source-card weather-card"><span class="source-graphic">🛰️</span><h3>CPTEC / INPE</h3><p>Previsões para o Brasil, satélites e análises de tempo.</p><span>Consultar CPTEC ↗</span></a>
-          <a href="https://www.msn.com/pt-br/clima" rel="noopener noreferrer" target="_blank" class="source-card weather-card"><span class="source-graphic">🌤️</span><h3>MSN Clima</h3><p>Referência visual e opção externa para conferência manual.</p><span>Consultar MSN ↗</span></a>
+          <a class="weather-card source-card" href="https://www.ipmetradar.com.br/home/webadm/2mobileGis.php" target="_blank" rel="noopener noreferrer">
+            <img src="./assets/source-radar.svg" alt="Ícone de radar" width="80" height="80" />
+            <h3>IPMet / Unesp</h3>
+            <p>Radar meteorológico e deslocamento de chuva em tempo real.</p>
+            <span>Acessar radar</span>
+          </a>
+          <a class="weather-card source-card" href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener noreferrer">
+            <img src="./assets/source-alert.svg" alt="Ícone de alertas" width="80" height="80" />
+            <h3>INMET</h3>
+            <p>Avisos oficiais de chuva intensa, ventos e outros riscos meteorológicos.</p>
+            <span>Acessar alertas</span>
+          </a>
+          <a class="weather-card source-card" href="https://www.cptec.inpe.br/" target="_blank" rel="noopener noreferrer">
+            <img src="./assets/source-satellite.svg" alt="Ícone de satélite" width="80" height="80" />
+            <h3>CPTEC / INPE</h3>
+            <p>Satélite, previsão nacional e apoio operacional para o Brasil.</p>
+            <span>Acessar portal</span>
+          </a>
+          <a class="weather-card source-card" href="https://open-meteo.com/en/docs" target="_blank" rel="noopener noreferrer">
+            <img src="./assets/source-compare.svg" alt="Ícone de comparação" width="80" height="80" />
+            <h3>Open-Meteo</h3>
+            <p>Fonte das APIs utilizadas para previsão e comparação entre modelos.</p>
+            <span>Acessar documentação</span>
+          </a>
         </div>
       </section>
     </main>
-    <footer><div><strong>ClimaRadar Brasil</strong><span>Previsões meteorológicas não substituem alertas de autoridades e da Defesa Civil.</span></div><div>Dados de previsão: <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> (CC BY 4.0) · Geocodificação: <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a></div></footer>
+
+    <footer class="site-footer site-width">
+      <div>
+        <strong>ClimaRadar Brasil</strong>
+        <p>Previsões meteorológicas são informativas e não substituem avisos de autoridades competentes.</p>
+      </div>
+      <div>
+        <p>Dados de previsão: Open-Meteo · Geocodificação: GeoNames.</p>
+        <p>Projeto estático compatível com GitHub Pages.</p>
+      </div>
+    </footer>
   </div>
-  <script>
-/* ClimaRadar: parser de dados observados e métricas — não depende de navegador. */
-(function (root, factory) {
-  const api = factory();
-  if (typeof module === 'object' && module.exports) module.exports = api;
-  else root.ClimaAudit = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  'use strict';
-  const normalize = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
-  function csvLine(line, sep) {
-    const fields = []; let value = '', quotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        if (quotes && line[i + 1] === '"') { value += '"'; i++; }
-        else quotes = !quotes;
-      } else if (ch === sep && !quotes) { fields.push(value.trim()); value = ''; }
-      else value += ch;
-    }
-    fields.push(value.trim()); return fields;
-  }
-  function numeric(raw) {
-    if (raw === null || raw === undefined) return null;
-    let x = String(raw).trim().replace(/\s+/g, '');
-    if (!x || /^(NULL|NA|NAN|N\/A|--|-|9999(?:[.,]0*)?|9999[.,]9+)$/i.test(x)) return null;
-    // Arquivos INMET usam vírgula decimal, outros usam ponto decimal.
-    if (x.includes(',') && x.includes('.')) x = x.lastIndexOf(',') > x.lastIndexOf('.') ? x.replace(/\./g, '').replace(',', '.') : x.replace(/,/g, '');
-    else x = x.replace(',', '.');
-    if (!/^[+-]?\d+(?:\.\d+)?$/.test(x)) return null;
-    const number = Number(x);
-    return Number.isFinite(number) && Math.abs(number) < 9999 ? number : null;
-  }
-  function hour(raw) {
-    const v = String(raw ?? '').trim().replace(/\s*UTC\s*/ig, '').replace(/[hH]/g, ':');
-    let h = null, m = 0;
-    if (/^\d{1,2}:\d{1,2}$/.test(v)) { [h,m] = v.split(':').map(Number); }
-    else if (/^\d{4}$/.test(v)) { h = Number(v.slice(0,2)); m = Number(v.slice(2)); }
-    else if (/^\d{1,2}$/.test(v)) h = Number(v);
-    return Number.isInteger(h) && h >= 0 && h < 24 && Number.isInteger(m) && m >= 0 && m < 60 ? { h, m } : null;
-  }
-  function dateUtc(raw) {
-    const input = String(raw ?? '').trim();
-    let y, m, d;
-    let match = input.match(/^(\d{4})[-\/]([01]?\d)[-\/]([0-3]?\d)$/);
-    if (match) { [,y,m,d] = match.map(String); }
-    else {
-      match = input.match(/^([0-3]?\d)[-\/]([01]?\d)[-\/](\d{4})$/);
-      if (!match) return null;
-      [,d,m,y] = match;
-    }
-    const yy = Number(y), mm = Number(m), dd = Number(d);
-    const stamp = new Date(Date.UTC(yy, mm - 1, dd));
-    if (stamp.getUTCFullYear() !== yy || stamp.getUTCMonth() !== mm - 1 || stamp.getUTCDate() !== dd) return null;
-    return `${String(yy).padStart(4,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-  }
-  function pickColumn(head, tests) {
-    return head.findIndex(key => tests.some(rx => rx.test(key)));
-  }
-  function parseObservations(raw) {
-    const lines = String(raw).replace(/^\ufeff/, '').split(/\r?\n/).filter(line => line.trim());
-    if (!lines.length) throw new Error('Arquivo CSV vazio.');
-    if (lines.length > 350000) throw new Error('CSV muito grande. Importe um período menor.');
-    const sep = [';', '\t', ','].sort((a, b) => (lines.slice(0, 12).reduce((n,s)=>n+(s.split(b).length-1),0)) - (lines.slice(0, 12).reduce((n,s)=>n+(s.split(a).length-1),0)))[0];
-    // Preferência por ponto e vírgula, para não dividir números decimais com vírgula.
-    const delimiter = lines.some(l => /^(DATA|DATA.*HORA)/i.test(l) && l.includes(';')) || lines.slice(0,12).some(l => /^(LATITUDE|LONGITUDE|ESTACAO)/i.test(l) && l.includes(';')) ? ';' : sep;
-    const metadata = { station: null, code: null, latitude: null, longitude: null };
-    let headerIndex = -1, indices = null;
-    lines.forEach((line, idx) => {
-      if (idx > 55 || headerIndex >= 0) return;
-      const parts = csvLine(line, delimiter); const label = normalize(parts[0]).replace(/:$/, '');
-      if (label === 'LATITUDE') metadata.latitude = numeric(parts[1]);
-      if (label === 'LONGITUDE') metadata.longitude = numeric(parts[1]);
-      if (label === 'ESTACAO') metadata.station = parts.slice(1).join(' ').trim() || null;
-      if (/^(CODIGO|CODIGO \(WMO\))/.test(label)) metadata.code = parts[1]?.trim() || null;
-      const cols = parts.map(normalize);
-      const day = pickColumn(cols, [/^DATA(?:\b|\s|\()/, /^DT_MEDICAO$/]);
-      const hourIndex = pickColumn(cols, [/^HORA\b/, /^HR_MEDICAO$/, /HORA.*UTC/]);
-      const temp = pickColumn(cols, [/TEMPERATURA.*BULBO SECO.*HORARIA/, /^TEMP_INST$/, /^TEMPERATURA$/, /^TEMPERATURA.*INSTANT/]);
-      const rain = pickColumn(cols, [/^PRECIPITACAO TOTAL.*HORAR/, /^CHUVA$/, /^PRECIPITACAO$/, /^PRECIPITACAO HORARIA/]);
-      if (day >= 0 && hourIndex >= 0 && (temp >= 0 || rain >= 0)) {
-        indices = { day, hour: hourIndex, temp, rain }; headerIndex = idx;
-      }
-    });
-    if (headerIndex < 0) throw new Error('Cabeçalho não reconhecido. Use o CSV horário original das estações automáticas INMET (Data, Hora UTC, Temperatura/Chuva).');
-    if (metadata.latitude !== null && (metadata.latitude < -90 || metadata.latitude > 90)) metadata.latitude = null;
-    if (metadata.longitude !== null && (metadata.longitude < -180 || metadata.longitude > 180)) metadata.longitude = null;
-    const byHour = new Map(); let ignored = 0, duplicated = 0, invalid = 0;
-    for (const line of lines.slice(headerIndex + 1)) {
-      const cols = csvLine(line, delimiter);
-      const date = dateUtc(cols[indices.day]), hh = hour(cols[indices.hour]);
-      if (!date || !hh || hh.m !== 0) { ignored++; continue; }
-      const temp = indices.temp >= 0 ? numeric(cols[indices.temp]) : null;
-      const rain = indices.rain >= 0 ? numeric(cols[indices.rain]) : null;
-      const safeTemp = temp !== null && temp >= -40 && temp <= 60 ? temp : null;
-      const safeRain = rain !== null && rain >= 0 && rain <= 500 ? rain : null;
-      if (safeTemp === null && safeRain === null) { invalid++; continue; }
-      const time = `${date}T${String(hh.h).padStart(2, '0')}:00`;
-      if (byHour.has(time)) duplicated++;
-      byHour.set(time, { time, temp: safeTemp, rain: safeRain });
-    }
-    const observations = [...byHour.values()].sort((a,b) => a.time.localeCompare(b.time));
-    if (!observations.length) throw new Error('Nenhuma medição horária válida no arquivo.');
-    return { ...metadata, observations, ignored, duplicated, invalid, units: { temp: '°C', rain: 'mm/h' } };
-  }
-  const finite = value => typeof value === 'number' && Number.isFinite(value);
-  function evaluate(observations, hourly, lead = 1) {
-    const time = hourly?.time;
-    if (!Array.isArray(time)) throw new Error('API sem horários.');
-    const temp = hourly[`temperature_2m_previous_day${lead}`];
-    const rain = hourly[`precipitation_previous_day${lead}`];
-    const index = new Map(time.map((t,i) => [String(t).slice(0,16),i]));
-    let nTemp = 0, errTemp = 0, biasTemp = 0, nRain = 0, errRain = 0, hits = 0, rainRight = 0;
-    for (const record of observations) {
-      const i = index.get(record.time);
-      if (i === undefined) continue;
-      const predictedTemp = Array.isArray(temp) ? temp[i] : null;
-      const predictedRain = Array.isArray(rain) ? rain[i] : null;
-      if (finite(record.temp) && finite(predictedTemp) && predictedTemp > -90 && predictedTemp < 75) {
-        const error = predictedTemp - record.temp;
-        errTemp += Math.abs(error); biasTemp += error; nTemp++;
-      }
-      if (finite(record.rain) && finite(predictedRain) && predictedRain >= 0) {
-        errRain += Math.abs(predictedRain - record.rain);
-        rainRight += (predictedRain >= 0.2) === (record.rain >= 0.2) ? 1 : 0;
-        hits += record.rain >= 0.2 ? 1 : 0;
-        nRain++;
-      }
-    }
-    return {
-      nTemp, tempMae: nTemp ? errTemp / nTemp : null,
-      tempBias: nTemp ? biasTemp / nTemp : null,
-      nRain, rainMae: nRain ? errRain / nRain : null,
-      rainHitRate: nRain ? rainRight / nRain * 100 : null,
-      rainyHours: hits
-    };
-  }
-  function distanceKm(lat1,lon1,lat2,lon2) {
-    const radians = d => d * Math.PI / 180;
-    const a = Math.sin(radians(lat2-lat1)/2)**2 + Math.cos(radians(lat1))*Math.cos(radians(lat2))*Math.sin(radians(lon2-lon1)/2)**2;
-    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-  return { normalize, csvLine, numeric, dateUtc, hour, parseObservations, evaluate, distanceKm };
-});
 
-</script>
-  <script>
-/* ClimaRadar Brasil — frontend estático. Sem scraping nem dependências de build. */
-'use strict';
-const $ = (selector) => document.querySelector(selector);
-const $$ = (selector) => [...document.querySelectorAll(selector)];
-const state = { place: null, loadingId: 0, searchId: 0, suggestions: [], abort: null };
-const MODEL_CONFIG = [
-  { id: 'ecmwf', api: 'https://api.open-meteo.com/v1/ecmwf', model: 'ecmwf_ifs' },
-  { id: 'gfs', api: 'https://api.open-meteo.com/v1/gfs', model: 'gfs_seamless' },
-  { id: 'icon', api: 'https://api.open-meteo.com/v1/dwd-icon', model: 'dwd_icon_global' }
-];
-const MAX_DAYS = 7;
-const DAY_FORMAT = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
-const NOW_FORMAT = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-function fetchJson(url, options = {}) {
-  // Timeout por requisição, independentemente da geolocalização.
-  const ctrl = new AbortController();
-  const timeout = setTimeout(() => ctrl.abort(), 12000);
-  if (options.signal) {
-    if (options.signal.aborted) ctrl.abort();
-    else options.signal.addEventListener('abort', () => ctrl.abort(), { once: true });
-  }
-  return fetch(url, { signal: ctrl.signal }).then(async r => {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
-    if (data.error) throw new Error(data.reason || 'Dados indisponíveis');
-    return data;
-  }).finally(() => clearTimeout(timeout));
-}
-function queryUrl(base, params) {
-  const url = new URL(base);
-  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  return url.toString();
-}
-function notify(text, error = false) {
-  const node = $('#message');
-  node.textContent = text;
-  node.classList.remove('hidden');
-  node.classList.toggle('error', !!error);
-}
-function clearNotice() { $('#message').classList.add('hidden'); }
-function number(value, decimals = 0) {
-  return Number.isFinite(Number(value)) && value !== null ? Number(value).toLocaleString('pt-BR', { maximumFractionDigits: decimals, minimumFractionDigits: decimals }) : '—';
-}
-function sum(values) { return values.reduce((a, b) => a + (Number.isFinite(Number(b)) ? Number(b) : 0), 0); }
-function weatherLabel(code) {
-  if (code === 0) return ['Céu limpo', '☀️'];
-  if ([1, 2].includes(code)) return ['Poucas nuvens', '🌤️'];
-  if (code === 3) return ['Encoberto', '☁️'];
-  if ([45, 48].includes(code)) return ['Neblina', '🌫️'];
-  if ([51, 53, 55, 56, 57].includes(code)) return ['Garoa', '🌦️'];
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return ['Chuva', '🌧️'];
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return ['Neve', '🌨️'];
-  if ([95, 96, 99].includes(code)) return ['Tempestade', '⛈️'];
-  return ['Condição variável', '🌥️'];
-}
-function getIndexForNow(times, currentIso) {
-  if (!Array.isArray(times) || !times.length) return -1;
-  const nowHour = String(currentIso || '').slice(0, 13);
-  let i = times.findIndex(t => String(t).slice(0, 13) >= nowHour);
-  return i === -1 ? times.length - 1 : i;
-}
-function dateShort(dateStr) {
-  const date = new Date(dateStr + 'T12:00:00');
-  return Number.isFinite(date.getTime()) ? DAY_FORMAT.format(date).replace('.', '') : dateStr;
-}
-function sameDate(localIso, day) { return String(localIso).slice(0, 10) === day; }
-function toHour(localIso) { return String(localIso).slice(11, 16) || '—'; }
-function setText(selector, value) { $(selector).textContent = value; }
-
-function renderCurrent(data, location) {
-  const current = data.current || {};
-  const today = data.daily || {};
-  setText('#cityName', location.name + (location.admin1 ? ', ' + location.admin1 : ''));
-  const localDate = data.current?.time || data.hourly?.time?.[0];
-  const date = localDate && localDate.length >= 10 ? new Date(localDate.slice(0, 10) + 'T12:00:00') : new Date();
-  setText('#todayLabel', NOW_FORMAT.format(date));
-  const condition = weatherLabel(current.weather_code);
-  setText('#heroIcon', condition[1]);
-  setText('#currentTemp', number(current.temperature_2m));
-  setText('#weatherDesc', condition[0]);
-  setText('#tempMax', number(today.temperature_2m_max?.[0]));
-  setText('#tempMin', number(today.temperature_2m_min?.[0]));
-  setText('#feelsLike', number(current.apparent_temperature) + '°C');
-  setText('#humidity', number(current.relative_humidity_2m) + '%');
-  setText('#wind', number(current.wind_speed_10m) + ' km/h');
-  setText('#rainNow', number(current.precipitation, 1) + ' mm');
-  setText('#fetchedAt', 'Consultado às ' + new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date()));
-  document.title = location.name + ' — ClimaRadar Brasil';
-}
-function renderRain(data) {
-  const h = data.hourly || {}, currentTime = data.current?.time || '';
-  const start = getIndexForNow(h.time, currentTime);
-  if (start < 0) return;
-  const chance12 = (h.precipitation_probability || []).slice(start, start + 12);
-  const chance = chance12.filter(x => typeof x === 'number').length ? Math.max(...chance12.filter(x => typeof x === 'number')) : null;
-  setText('#rainChance', chance === null ? '—' : number(chance) + '%');
-  const label = chance === null ? 'Probabilidade indisponível' : chance >= 70 ? 'Chance elevada em ao menos uma hora' : chance >= 40 ? 'Chance moderada em ao menos uma hora' : 'Chance baixa no período';
-  setText('#riskLabel', label);
-  $('#rainBar').style.width = Math.max(0, Math.min(100, chance || 0)) + '%';
-  const rain24 = (h.precipitation || []).slice(start, start + 24);
-  setText('#rain24', number(sum(rain24), 1) + ' mm');
-  const next = (h.precipitation || []).findIndex((mm, idx) => idx >= start && idx < start + 24 && Number(mm) >= 0.2);
-  setText('#nextRain', next < 0 ? 'Sem chuva ≥ 0,2 mm/h' : toHour(h.time[next]));
-}
-function renderHourly(data) {
-  const h = data.hourly || {};
-  const start = getIndexForNow(h.time, data.current?.time);
-  if (start < 0) return;
-  const list = h.time.slice(start, start + 24).map((time, i) => ({
-    time, temp: h.temperature_2m?.[start + i], chance: h.precipitation_probability?.[start + i], wx: h.weather_code?.[start + i]
-  }));
-  const sampled = list.filter((_, i) => i % 4 === 0).slice(0, 6);
-  $('#hourlyItems').replaceChildren(...sampled.map(item => {
-    const root = document.createElement('div'); root.className = 'hourly-item';
-    const vals = [['time', toHour(item.time)], ['wx', weatherLabel(item.wx)[1]], ['value', number(item.temp) + '°'], ['chance', number(item.chance) + '% chuva']];
-    vals.forEach(([cls, val]) => { const e = document.createElement('span'); e.className = cls; e.textContent = val; root.appendChild(e); });
-    return root;
-  }));
-  const valid = list.filter(x => Number.isFinite(x.temp));
-  if (valid.length < 2) { setText('#hourlyChart', 'Previsão horária indisponível.'); return; }
-  const width = 940, height = 215, left = 28, right = 18, top = 25, bottom = 28;
-  const ymin = Math.floor(Math.min(...valid.map(x => x.temp)) - 1), ymax = Math.ceil(Math.max(...valid.map(x => x.temp)) + 1);
-  const range = Math.max(1, ymax - ymin), innerW = width - left - right, innerH = height - top - bottom;
-  const px = i => left + i / (list.length - 1) * innerW;
-  const py = t => top + ((ymax - t) / range) * (innerH - 18);
-  const points = list.map((x, i) => Number.isFinite(x.temp) ? [px(i), py(x.temp)] : null).filter(Boolean);
-  const path = points.map((p, i) => (i ? 'L' : 'M') + p.map(v => v.toFixed(2)).join(' ')).join(' ');
-  const bars = list.map((x, i) => { const chance = Number.isFinite(x.chance) ? Math.max(0, Math.min(100, x.chance)) : 0; const bh = chance / 100 * 55; return `<rect x="${(px(i)-9).toFixed(1)}" y="${(height-bottom-bh).toFixed(1)}" width="18" height="${bh.toFixed(1)}" rx="3" fill="#62b1ed" opacity=".37"/>`; }).join('');
-  const ticks = [0, 4, 8, 12, 16, 20].filter(i => i < list.length).map(i => `<text x="${px(i)}" y="${height - 7}" text-anchor="middle" fill="#95aebe" font-size="12">${toHour(list[i].time)}</text>`).join('');
-  const guides = [0, 1, 2, 3].map(i => { const val = ymin + (range / 3) * i; const yy = py(val); return `<line x1="${left}" x2="${width-right}" y1="${yy}" y2="${yy}" stroke="#ffffff" stroke-opacity=".09" stroke-dasharray="3,6"/><text x="2" y="${yy+4}" fill="#95aebe" font-size="11">${Math.round(val)}°</text>`; }).join('');
-  // Conteúdo do SVG é somente derivado de valores numéricos e horários do provedor.
-  $('#hourlyChart').innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Previsão de temperatura em linha verde e chance de chuva em barras azuis ao longo das próximas 24 horas"><defs><linearGradient id="tempFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7be9c9" stop-opacity=".16"/><stop offset="1" stop-color="#7be9c9" stop-opacity="0"/></linearGradient></defs>${guides}${bars}<path d="${path} L ${points.at(-1)[0]} ${height-bottom} L ${points[0][0]} ${height-bottom} Z" fill="url(#tempFill)"/><path d="${path}" fill="none" stroke="#7de4ca" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${points.filter((_,i)=>i%4===0).map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#bafbe9"/>`).join('')}${ticks}</svg>`;
-}
-function renderDaily(data) {
-  const d = data.daily || {};
-  if (!Array.isArray(d.time)) { setText('#dailyCards', 'Previsão semanal indisponível.'); return; }
-  $('#dailyCards').replaceChildren(...d.time.slice(0, MAX_DAYS).map((day, i) => {
-    const el = document.createElement('article'); el.className = 'weather-card daily-card';
-    const parts = [
-      ['h3', i === 0 ? 'Hoje' : dateShort(day)],
-      ['span', weatherLabel(d.weather_code?.[i])[1], 'day-icon'],
-      ['div', number(d.temperature_2m_max?.[i]) + '° / ' + number(d.temperature_2m_min?.[i]) + '°', 'day-temps'],
-      ['span', number(d.precipitation_probability_max?.[i]) + '% chuva', 'day-rain']
-    ];
-    parts.forEach(([tag, value, cls]) => { const node = document.createElement(tag); node.textContent = value; if (cls) node.className = cls; el.appendChild(node); });
-    return el;
-  }));
-}
-function summarizeModel(data, baseCurrent) {
-  const h = data.hourly || {}, currentTime = baseCurrent || h.time?.[0] || '';
-  if (!h.time || !h.temperature_2m) throw new Error('Sem série horária');
-  const idx = getIndexForNow(h.time, currentTime);
-  if (idx < 0) throw new Error('Sem horário válido');
-  return { temp: h.temperature_2m[idx], rain: sum((h.precipitation || []).slice(idx, idx + 24)) };
-}
-function renderModels(results, currentTime) {
-  const successful = [];
-  for (let i = 0; i < MODEL_CONFIG.length; ++i) {
-    const model = MODEL_CONFIG[i], article = $(`[data-model="${model.id}"]`), result = results[i];
-    if (result.status === 'fulfilled') {
-      try {
-        const values = summarizeModel(result.value, currentTime);
-        if (!Number.isFinite(values.temp)) throw new Error('Sem temperatura');
-        article.querySelector('.model-temp').textContent = number(values.temp) + '°C';
-        article.querySelector('.model-rain').textContent = number(values.rain, 1) + ' mm';
-        article.querySelector('.model-status').textContent = 'Disponível';
-        successful.push({ ...values, id: model.id });
-        continue;
-      } catch (e) { /* Status de indisponibilidade abaixo. */ }
-    }
-    article.querySelector('.model-temp').textContent = '—';
-    article.querySelector('.model-rain').textContent = '—';
-    article.querySelector('.model-status').textContent = 'Indisponível';
-  }
-  if (successful.length < 2) {
-    setText('#consensusTitle', 'Comparação limitada');
-    setText('#consensusText', 'É necessário obter ao menos dois modelos para comparar divergências. As previsões principais podem continuar funcionando.');
-    return;
-  }
-  const temps = successful.map(x => x.temp), rains = successful.map(x => x.rain);
-  const tSpread = Math.max(...temps) - Math.min(...temps), rSpread = Math.max(...rains) - Math.min(...rains);
-  const tone = tSpread < 2 && rSpread < 3 ? 'Baixa divergência entre os modelos' : tSpread > 4 || rSpread > 12 ? 'Divergência elevada entre os modelos' : 'Divergência moderada entre os modelos';
-  setText('#consensusTitle', tone);
-  setText('#consensusText', `${successful.length} modelos comparados. Diferença de até ${number(tSpread, 1)}°C na temperatura próxima hora e ${number(rSpread, 1)} mm no acumulado de 24h. Isso não mede o acerto real da previsão.`);
-}
-async function loadPlace(place) {
-  const id = ++state.loadingId;
-  if (state.abort) state.abort.abort();
-  state.abort = new AbortController();
-  const signal = state.abort.signal;
-  state.place = place;
-  window.ClimaRadarCurrentPlace = { name: place.name, latitude: place.latitude, longitude: place.longitude };
-  document.dispatchEvent(new CustomEvent('climaradar:place', { detail: window.ClimaRadarCurrentPlace }));
-  clearNotice();
-  setText('#cityName', place.name + (place.admin1 ? ', ' + place.admin1 : ''));
-  setText('#fetchedAt', 'Carregando...');
-  $('#suggestions').classList.add('hidden');
-  const common = { latitude: place.latitude, longitude: place.longitude, timezone: 'auto', forecast_days: MAX_DAYS };
-  const primaryUrl = queryUrl('https://api.open-meteo.com/v1/forecast', { ...common,
-    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m',
-    hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,relative_humidity_2m,wind_speed_10m',
-    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max' });
-  const params = { ...common, hourly: 'temperature_2m,precipitation' };
-  // Cada modelo é requisitado separadamente para deixar indisponibilidade isolada.
-  const main = fetchJson(primaryUrl, { signal });
-  const models = MODEL_CONFIG.map(config => fetchJson(queryUrl(config.api, { ...params, models: config.model }), { signal }));
-  const [primaryResult, ...modelResults] = await Promise.allSettled([main, ...models]);
-  if (id !== state.loadingId) return;
-  if (primaryResult.status === 'rejected') {
-    notify('Não foi possível carregar a previsão desta cidade. Confira sua conexão e tente novamente. Detalhe: ' + (primaryResult.reason?.message || 'fonte indisponível'), true);
-    setText('#fetchedAt', 'Indisponível');
-    renderModels(modelResults, '');
-    return;
-  }
-  const data = primaryResult.value;
-  renderCurrent(data, place);
-  renderRain(data);
-  renderHourly(data);
-  renderDaily(data);
-  renderModels(modelResults, data.current?.time);
-  try { localStorage.setItem('climaradar-place', JSON.stringify({ name: place.name, admin1: place.admin1 || '', latitude: place.latitude, longitude: place.longitude })); } catch { /* Browser bloqueou armazenamento. */ }
-}
-async function searchCities(text) {
-  const query = text.trim();
-  if (query.length < 2) return [];
-  const url = queryUrl('https://geocoding-api.open-meteo.com/v1/search', { name: query, count: 8, language: 'pt', countryCode: 'BR' });
-  const data = await fetchJson(url);
-  return (data.results || []).filter(x => Number.isFinite(x.latitude) && Number.isFinite(x.longitude));
-}
-function showSuggestions(results) {
-  state.suggestions = results;
-  const target = $('#suggestions');
-  target.replaceChildren();
-  if (!results.length) { target.classList.add('hidden'); return; }
-  results.forEach((result, i) => {
-    const button = document.createElement('button');
-    button.type = 'button'; button.className = 'suggestion'; button.setAttribute('role','option');
-    const city = document.createElement('strong'), detail = document.createElement('span');
-    city.textContent = result.name;
-    detail.textContent = [result.admin1, result.country].filter(Boolean).join(' · ');
-    button.append(city,detail);
-    button.addEventListener('click', () => { $('#cityInput').value = result.name; loadPlace(result); });
-    target.appendChild(button);
-  });
-  target.classList.remove('hidden');
-}
-let searchTimeout;
-$('#cityInput').addEventListener('input', event => {
-  clearTimeout(searchTimeout);
-  const text = event.target.value.trim();
-  const current = ++state.searchId;
-  if (text.length < 2) { showSuggestions([]); return; }
-  searchTimeout = setTimeout(async () => {
-    try { const result = await searchCities(text); if (current === state.searchId) showSuggestions(result); }
-    catch { if (current === state.searchId) showSuggestions([]); }
-  }, 350);
-});
-$('#searchForm').addEventListener('submit', async event => {
-  event.preventDefault(); clearTimeout(searchTimeout);
-  const text = $('#cityInput').value.trim();
-  if (text.length < 2) { notify('Digite ao menos duas letras do nome da cidade.', true); return; }
-  const selected = state.suggestions.find(x => x.name.toLowerCase() === text.toLowerCase());
-  if (selected) { loadPlace(selected); return; }
-  try {
-    const result = await searchCities(text);
-    if (result.length) { $('#cityInput').value = result[0].name; loadPlace(result[0]); }
-    else notify('Cidade não encontrada. Tente escrever o nome completo.', true);
-  } catch { notify('Busca de cidades indisponível no momento.', true); }
-});
-document.addEventListener('click', event => { if (!event.target.closest('.search-wrapper')) $('#suggestions').classList.add('hidden'); });
-$('#geolocate').addEventListener('click', () => {
-  if (!navigator.geolocation) { notify('Geolocalização indisponível neste navegador.', true); return; }
-  notify('Solicitando permissão de localização no navegador...');
-  navigator.geolocation.getCurrentPosition(async position => {
-    const lat = position.coords.latitude, lon = position.coords.longitude;
-    // Geocoding reverso não é oferecido pelo mesmo endpoint, portanto exibimos coordenadas aproximadas.
-    const place = { name: 'Minha localização', admin1: `(${number(lat, 2)}, ${number(lon, 2)})`, latitude: lat, longitude: lon };
-    $('#cityInput').value = '';
-    loadPlace(place);
-  }, error => notify(error.code === 1 ? 'Permissão negada. Pesquise uma cidade para consultar a previsão.' : 'Não foi possível obter sua localização. Pesquise uma cidade.', true), { enableHighAccuracy: false, timeout: 13000, maximumAge: 300000 });
-});
-async function initialize() {
-  try {
-    const stored = JSON.parse(localStorage.getItem('climaradar-place') || 'null');
-    if (stored && Number.isFinite(stored.latitude) && Number.isFinite(stored.longitude) && typeof stored.name === 'string') { $('#cityInput').value = stored.name === 'Minha localização' ? '' : stored.name; await loadPlace(stored); return; }
-  } catch { /* Sem cidade armazenada. */ }
-  try {
-    const initial = await searchCities('Morro Agudo');
-    const choice = initial.find(p => /paulo/i.test(p.admin1 || '')) || initial[0];
-    if (!choice) throw new Error('Nenhum município encontrado');
-    $('#cityInput').value = choice.name;
-    await loadPlace(choice);
-  } catch { notify('Não foi possível obter a cidade inicial. Pesquise outra cidade para começar.', true); }
-}
-initialize();
-
-</script>
-  <script>
-/* Auditoria de previsões históricas contra leituras locais fornecidas pelo visitante. */
-(() => {
-  'use strict';
-  const $ = sel => document.querySelector(sel);
-  const core = window.ClimaAudit;
-  const models = [
-    { id:'ecmwf', label:'ECMWF IFS 9 km', model:'ecmwf_ifs' },
-    { id:'gfs', label:'GFS Seamless', model:'gfs_seamless' },
-    { id:'icon', label:'ICON Global', model:'dwd_icon_global' }
-  ];
-  let station = null;
-  let lastReport = null;
-  let currentRun = 0;
-  const number = (value, digits=1) => Number.isFinite(value) ? value.toLocaleString('pt-BR', {minimumFractionDigits:digits, maximumFractionDigits:digits}) : '—';
-  function status(message, type = '') {
-    const target = $('#auditStatus');
-    target.textContent = message;
-    target.className = 'audit-feedback' + (type ? ' ' + type : '');
-  }
-  function getCoords() {
-    const lat = Number($('#stationLat').value.replace(',', '.'));
-    const lon = Number($('#stationLon').value.replace(',', '.'));
-    if (!$('#stationLat').value.trim() || !$('#stationLon').value.trim() || !Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      throw new Error('Informe a latitude e a longitude reais da estação do CSV. Não use automaticamente as coordenadas da cidade.');
-    }
-    return {latitude:lat, longitude:lon};
-  }
-  function distanceWarning(coords) {
-    const place = window.ClimaRadarCurrentPlace;
-    if (!place || !Number.isFinite(place.latitude) || !Number.isFinite(place.longitude)) return 'Previsão calculada nas coordenadas da estação importada.';
-    const d = core.distanceKm(coords.latitude, coords.longitude, place.latitude, place.longitude);
-    return `${number(d,0)} km entre a estação e a cidade pesquisada. ${d > 50 ? 'A estação pode não representar o clima local da cidade.' : 'Mesmo perto, diferenças de altitude e relevo podem afetar a comparação.'}`;
-  }
-  async function fetchArchive(model, bounds, coords, lead) {
-    const url = new URL('https://previous-runs-api.open-meteo.com/v1/forecast');
-    Object.entries({
-      ...coords,
-      start_date: bounds.start,
-      end_date: bounds.end,
-      timezone: 'UTC',
-      models: model.model,
-      hourly: `temperature_2m_previous_day${lead},precipitation_previous_day${lead}`
-    }).forEach(([k,v]) => url.searchParams.set(k,v));
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 22000);
-    try {
-      const response = await fetch(url.toString(), { signal:controller.signal });
-      if (!response.ok) throw new Error('HTTP '+response.status);
-      const data = await response.json();
-      if (data.error || !data.hourly?.time) throw new Error(data.reason || 'Série horária ausente');
-      return data.hourly;
-    } finally { clearTimeout(timeout); }
-  }
-  function cell(value, tag='td') {
-    const el = document.createElement(tag);
-    el.textContent = value;
-    return el;
-  }
-  function renderReport(report) {
-    $('#auditResult').classList.remove('hidden');
-    const head = $('#auditBody'); head.replaceChildren();
-    const withTemp = report.rows.filter(r => r.result && r.result.nTemp >= 12).sort((a,b) => a.result.tempMae - b.result.tempMae);
-    const winner = withTemp[0];
-    for (const row of report.rows) {
-      const tr = document.createElement('tr');
-      const r = row.result;
-      tr.append(cell(row.label), cell(r ? String(r.nTemp) : '—'), cell(r ? `${number(r.tempMae,2)} °C` : '—'), cell(r ? `${number(r.tempBias,2)} °C` : '—'), cell(r && r.nRain ? `${number(r.rainMae,2)} mm/h` : '—'), cell(row.error ? 'Indisponível: ' + row.error : r.nTemp < 12 ? 'Amostra insuficiente' : 'Comparado'));
-      if (winner && winner.id === row.id) tr.classList.add('best-model');
-      head.appendChild(tr);
-    }
-    $('#auditHeadline').textContent = winner ? `${winner.label}: menor erro médio de temperatura na amostra` : 'Sem amostra suficiente para classificar os modelos';
-    $('#auditInterpretation').textContent = winner
-      ? `O ${winner.label} registrou erro absoluto médio de ${number(winner.result.tempMae,2)} °C em ${winner.result.nTemp} horas válidas. Este resultado vale somente para a estação, o período e a antecedência selecionados; não comprova superioridade futura.`
-      : 'É necessário obter pelo menos 12 comparações horárias válidas em um modelo. Confira a data do arquivo e a disponibilidade das previsões arquivadas.';
-    $('#auditScope').textContent = `Estação: ${report.stationName} · Período (UTC): ${report.start} a ${report.end} · Antecedência: ${report.lead*24}h · Observações no período: ${report.observations.length} · ${distanceWarning(report.coords)}`;
-    $('#exportAudit').disabled = false;
-  }
-  $('#stationCsv').addEventListener('change', async e => {
-    currentRun++;
-    station = null; lastReport = null;
-    $('#auditResult').classList.add('hidden');
-    $('#exportAudit').disabled = true;
-    $('#compareAudit').disabled = false;
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { status('Arquivo acima de 10 MB. Extraia somente uma estação e um período menor.', 'error'); return; }
-    try {
-      const content = await file.text();
-      station = core.parseObservations(content);
-      $('#stationLat').value = Number.isFinite(station.latitude) ? String(station.latitude) : '';
-      $('#stationLon').value = Number.isFinite(station.longitude) ? String(station.longitude) : '';
-      const first = station.observations[0].time.slice(0,10), last = station.observations.at(-1).time.slice(0,10);
-      $('#stationInfo').textContent = `${station.station || file.name}${station.code ? ' ('+station.code+')' : ''} · ${station.observations.length} horários válidos · ${first} a ${last} (UTC) · ${station.invalid} leituras descartadas · ${station.duplicated} horários duplicados.`;
-      status('Arquivo importado localmente. Confirme as coordenadas da estação e clique em Comparar modelos.', 'ok');
-    } catch (error) {
-      station = null; $('#stationInfo').textContent = 'Arquivo não reconhecido.';
-      status(error.message || 'Não foi possível interpretar o arquivo.', 'error');
-    }
-  });
-  $('#auditForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    if (!station) { status('Importe primeiro um CSV horário do INMET.', 'error'); return; }
-    let coords;
-    try { coords = getCoords(); }
-    catch (error) { status(error.message, 'error'); return; }
-    const lead = Number($('#auditLead').value);
-    if (![1,2,3].includes(lead)) { status('Antecedência inválida.', 'error'); return; }
-    const maxUtc = new Date().toISOString().slice(0,13)+':00';
-    const usable = station.observations.filter(o => o.time <= maxUtc);
-    if (!usable.length) { status('O CSV não contém observações passadas válidas para comparação.', 'error'); return; }
-    const lastDay = usable.at(-1).time.slice(0,10);
-    const end = new Date(lastDay+'T00:00:00Z');
-    const begin = new Date(end.getTime() - 13 * 86400000).toISOString().slice(0,10);
-    const subset = usable.filter(o => o.time.slice(0,10) >= begin);
-    if (!subset.length) { status('Sem registros nos últimos 14 dias do arquivo.', 'error'); return; }
-    const run = ++currentRun;
-    $('#compareAudit').disabled = true;
-    $('#auditResult').classList.add('hidden');
-    $('#exportAudit').disabled = true;
-    status('Comparando três modelos com previsões emitidas antes das observações…');
-    const outcomes = await Promise.allSettled(models.map(model => fetchArchive(model, {start:begin,end:lastDay},coords,lead)));
-    if (run !== currentRun) return;
-    $('#compareAudit').disabled = false;
-    const rows = models.map((model,i) => {
-      const outcome = outcomes[i];
-      if (outcome.status === 'fulfilled') {
-        try { return {...model, result: core.evaluate(subset, outcome.value, lead)}; }
-        catch(err) { return {...model, error:err.message}; }
-      }
-      return {...model, error:outcome.reason?.name === 'AbortError' ? 'tempo excedido' : String(outcome.reason?.message || 'erro de rede').slice(0,100)};
-    });
-    lastReport = {rows, stationName:station.station || 'Estação importada', coords, start:begin, end:lastDay, lead, observations:subset};
-    renderReport(lastReport);
-    const available = rows.filter(x => x.result && x.result.nTemp > 0).length;
-    status(available ? `Auditoria concluída: ${available} modelo(s) com temperatura comparável.` : 'Os modelos não retornaram valores comparáveis. Veja os detalhes na tabela.', available ? 'ok' : 'error');
-  });
-  $('#exportAudit').addEventListener('click', () => {
-    if (!lastReport) return;
-    const csv = [
-      ['modelo','antecedencia_h','estacao','latitude','longitude','inicio_utc','fim_utc','n_temp','mae_temp_c','bias_temp_c','n_chuva','mae_chuva_mm_h','horas_com_chuva_observada','status'],
-      ...lastReport.rows.map(row => [
-        row.label, lastReport.lead*24, lastReport.stationName, lastReport.coords.latitude, lastReport.coords.longitude,
-        lastReport.start, lastReport.end, row.result?.nTemp ?? '', row.result?.tempMae ?? '', row.result?.tempBias ?? '',
-        row.result?.nRain ?? '', row.result?.rainMae ?? '', row.result?.rainyHours ?? '', row.error || (row.result?.nTemp < 12 ? 'amostra insuficiente' : 'ok')
-      ])
-    ].map(values => values.map(value => '"'+String(value).replace(/"/g,'""')+'"').join(';')).join('\r\n');
-    const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a'); link.href = url; link.download = 'climaradar-auditoria-'+lastReport.end+'.csv';
-    document.body.append(link); link.click(); link.remove();
-    setTimeout(() => URL.revokeObjectURL(url),5000);
-  });
-})();
-
-</script>
+  <script src="./app.js" defer></script>
+  <script src="./audit-core.js" defer></script>
+  <script src="./audit-ui.js" defer></script>
 </body>
 </html>
