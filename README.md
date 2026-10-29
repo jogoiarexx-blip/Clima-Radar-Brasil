@@ -1,4 +1,4 @@
-# ClimaRadar Brasil — v0.7 (precisão verificada fora da amostra)
+# ClimaRadar Brasil — v0.8 (precisão verificada fora da amostra)
 
 Site estático de meteorologia, otimizado para GitHub Pages, com visualização de radar observado e comparação de modelos meteorológicos. **Não é um serviço de alertas oficial.**
 
@@ -105,3 +105,26 @@ python3 tests/calibration_smoke.py
 ```
 
 Os testes automatizados usam valores **sintéticos**, e não confirmam disponibilidade ou desempenho das APIs reais.
+
+
+## v0.8 — validação multiação espacial com até 60 dias (29/10/2026)
+
+- Novo laboratório `#rede`: seleção de **3 a 6 CSVs INMET** com latitudes e longitudes; arquivos lidos no navegador e limitados a 8 MB cada. Não envia os CSVs a terceiros.
+- Histórico por estação de **30, 45 ou 60 dias** e seleção de antecedência de **24, 48 ou 72 horas**. Cada estação gera até quatro consultas ao endpoint público `previous-runs-api.open-meteo.com`, com até três requisições simultâneas.
+- **Modelos independentes:** ECMWF, GFS, ICON e GEM; modelos ausentes em alguma estação são retirados da comparação comum. Dados incompletos não são substituídos por zero.
+- **Validação geográfica com embargo temporal:** para testar uma estação, os pesos são estimados exclusivamente em **outras duas ou mais estações**, com observações anteriores ao início do período reservado por pelo menos 24 horas. Os últimos dois dias da estação ficam separados para teste.
+- A comparação reporta MAE médio por estação e a média **macro por estações**, não o total de horas somado (evita cidades muito amostradas dominarem a avaliação).
+- **Critérios de uso:** requer três estações com testes válidos e ao menos dois modelos comuns; melhoria mínima de 2% e ganho absoluto; bloqueio se uma estação piorar muito ou se a chuva piorar durante eventos chuvosos.
+- Resultados por variável e estação, com **exportação CSV**. Mesmo quando há ganho retrospectivo, **não ativa automaticamente os pesos no painel**: a calibração ao vivo permanece local, temporária e sujeita às regras da v0.7.
+- Novos módulos `network-core.js`, `network-ui.js` e `tests/network.test.js`.
+
+### Teste
+
+```bash
+node --test tests/*.test.js
+python3 tests/ui_smoke.py
+python3 tests/calibration_smoke.py
+python3 tests/network_smoke.py
+```
+
+**Atenção:** os testes offline usam dados simulados. Para demonstrar ganho meteorológico real, importe ao menos três CSVs independentes de diferentes estações do INMET e valide as séries históricas das APIs. A aprovação no teste retrospectivo não significa garantia de previsão futura. A API Previous Runs conserva antecedências fixas e, conforme a documentação do provedor, sua cobertura histórica depende do modelo.

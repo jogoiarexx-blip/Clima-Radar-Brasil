@@ -394,6 +394,36 @@
         </article>
       </section>
 
+      <section class="section-block" id="rede" aria-labelledby="networkHeading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">LABORATÓRIO DE PRECISÃO · MULTIESTAÇÃO</p>
+            <h2 id="networkHeading">A previsão funciona em outras regiões?</h2>
+          </div>
+          <p class="section-caption">Compare modelos com até 60 dias de observações de várias estações INMET. Um teste independente por estação é mais rigoroso que medir só a cidade atual.</p>
+        </div>
+        <article class="weather-card network-panel">
+          <div class="network-intro">
+            <div><span class="mini-label">VALIDAÇÃO ESPACIAL E TEMPORAL</span><h3>Teste de generalização entre estações</h3><p>Envie de 3 a 6 arquivos CSV horários do INMET, de estações distintas. Os arquivos são lidos neste navegador; somente coordenadas e datas são consultadas nas APIs públicas do Open-Meteo.</p></div>
+            <span class="network-mark">V0.8 · BETA</span>
+          </div>
+          <form id="networkForm" class="network-form">
+            <div class="field-group network-files"><label for="networkCsv">Estações INMET (CSV individuais)</label><input type="file" id="networkCsv" accept=".csv,text/csv" multiple required /><small>3 a 6 estações a pelo menos 10 km entre si · máximo de 8 MB por arquivo</small></div>
+            <div class="field-group"><label for="networkLead">Antecedência comparada</label><select id="networkLead"><option value="1">24 horas</option><option value="2">48 horas</option><option value="3">72 horas</option></select></div>
+            <div class="field-group"><label for="networkDays">Janela histórica</label><select id="networkDays"><option value="30">30 dias</option><option value="45">45 dias</option><option value="60" selected>60 dias</option></select></div>
+            <div class="network-actions"><button type="submit" id="networkCompare" class="btn btn-primary">Avaliar estações</button><button type="button" id="networkCancel" class="btn btn-secondary" disabled>Cancelar</button><button type="button" id="networkExport" class="btn btn-secondary" disabled>Exportar CSV</button></div>
+          </form>
+          <p id="networkStatus" class="network-status" role="status" aria-live="polite">Os pesos estimados em outras estações serão avaliados na estação reservada, sem utilizar seus dados para treinamento.</p>
+          <div id="networkResult" class="network-result hidden">
+            <div class="network-results-head"><div><span class="mini-label">TESTE FORA DA AMOSTRA</span><h3 id="networkHeadline">Resultado multirregional</h3></div><span id="networkBadge" class="holdout-badge">Aguardando</span></div>
+            <div id="networkMetrics" class="network-metrics"></div>
+            <div id="networkModelSummary" class="network-models"></div>
+            <div class="table-wrap"><table class="audit-table"><thead><tr><th>Estação</th><th>Temperatura base</th><th>Temperatura ajustada</th><th>Chuva base</th><th>Chuva ajustada</th><th>Horas testadas</th><th>Situação</th></tr></thead><tbody id="networkRows"></tbody></table></div>
+            <p class="network-disclaimer">A comparação dá o mesmo peso a cada estação elegível, exige dados horários coincidentes entre modelos e utiliza embargo de 24h antes dos dois últimos dias reservados. A aprovação é apenas diagnóstica: não altera automaticamente a previsão exibida no site.</p>
+          </div>
+        </article>
+      </section>
+
       <section class="section-block" id="fontes">
         <div class="section-heading">
           <div>
@@ -454,6 +484,8 @@
   <script src="./audit-core.js" defer></script>
   <script src="./validation-core.js" defer></script>
   <script src="./audit-ui.js" defer></script>
+  <script src="./network-core.js" defer></script>
+  <script src="./network-ui.js" defer></script>
   <script src="./radar-core.js" defer></script>
   <script src="./radar.js" defer></script>
   <script src="./mobile.js" defer></script>
