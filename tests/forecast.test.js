@@ -72,3 +72,29 @@ test('calibração v2 sem teste reservado não é aplicada no consenso v3',()=>{
  assert.equal(base.summary.temp,old.summary.temp);
  assert.equal(base.summary.rain24,old.summary.rain24);
 });
+
+
+test('pesos de chuva salvos não alteram chuva quando a validação reprovou chuva',()=>{
+ const reference=fc.summary(data(27,0.5),'bestmatch','BM',times[0]);
+ const a=fc.summary(data(27,0.1),'ecmwf','EC',times[0]);
+ const b=fc.summary(data(30,2),'gfs','GFS',times[0]);
+ const baseline=fc.ensemble(reference,[a,b]);
+ const payload={version:3,validation:{temp:{eligible:true},rain:{eligible:false}},weights:{temp:{ecmwf:0.9,gfs:0.1},rain:{ecmwf:0.95,gfs:0.05}}};
+ const actual=fc.ensemble(reference,[a,b],payload);
+ assert.ok(Math.abs(actual.summary.temp-baseline.summary.temp)>0.1);
+ assert.equal(actual.summary.rain24,baseline.summary.rain24);
+});
+test('pesos de temperatura salvos não alteram temperatura quando a validação reprovou temperatura',()=>{
+ const reference=fc.summary(data(27,0.5),'bestmatch','BM',times[0]);
+ const a=fc.summary(data(27,0.1),'ecmwf','EC',times[0]);
+ const b=fc.summary(data(30,2),'gfs','GFS',times[0]);
+ const baseline=fc.ensemble(reference,[a,b]);
+ const payload={version:3,validation:{temp:{eligible:false},rain:{eligible:true}},weights:{temp:{ecmwf:0.95,gfs:0.05},rain:{ecmwf:0.9,gfs:0.1}}};
+ const actual=fc.ensemble(reference,[a,b],payload);
+ assert.equal(actual.summary.temp,baseline.summary.temp);
+ assert.ok(Math.abs(actual.summary.rain24-baseline.summary.rain24)>0.1);
+});
+test('série encerrada não fornece leitura atual inventada',()=>{
+ const d=data(27,0.2);
+ assert.throws(()=>fc.summary(d,'ecmwf','EC','2026-12-10T12:00'),/Sem horas disponíveis/);
+});

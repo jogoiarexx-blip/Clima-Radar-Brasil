@@ -68,7 +68,7 @@ function getIndexForNow(times, currentIso) {
   if (!Array.isArray(times) || !times.length) return -1;
   const currentHour = String(currentIso || '').slice(0, 13);
   const found = times.findIndex(time => String(time).slice(0, 13) >= currentHour);
-  return found === -1 ? times.length - 1 : found;
+  return found; // Série expirada não deve ser apresentada como leitura atual.
 }
 
 function weatherLabel(code) {
@@ -213,7 +213,16 @@ function renderRain(primaryData, consensus) {
   const h = primaryData.hourly || {};
   const currentTime = primaryData.current?.time || '';
   const start = getIndexForNow(h.time, currentTime);
-  if (start < 0) return;
+  if (start < 0) {
+    setText('#rainChance', '—');
+    setText('#riskLabel', 'Previsão horária indisponível ou desatualizada.');
+    setText('#rain24', '—');
+    setText('#nextRain', '—');
+    setText('#consensusRain24', '—');
+    setText('#worstCaseRain', '—');
+    $('#rainBar').style.width = '0%';
+    return;
+  }
   const chance12 = (h.precipitation_probability || []).slice(start, start + 12).filter(v => Number.isFinite(v));
   const baseChance = chance12.length ? Math.max(...chance12) : null;
   const consensusChance = Number.isFinite(consensus.rainChance) ? consensus.rainChance : baseChance;
@@ -222,9 +231,11 @@ function renderRain(primaryData, consensus) {
   $('#rainBar').style.width = `${clamp(consensusChance || 0, 0, 100)}%`;
   const rain24Values = (h.precipitation || []).slice(start, start + 24);
   const rain24Primary = rain24Values.length === 24 && rain24Values.every(Number.isFinite) ? sum(rain24Values) : null;
-  const nextRainIndex = (h.precipitation || []).findIndex((value, index) => index >= start && index < start + 24 && Number(value) >= 0.2);
+  const nextRainIndex = (h.precipitation || []).findIndex((value, index) => index >= start && index < start + 24 && typeof value === 'number' && Number.isFinite(value) && value >= 0.2);
   setText('#rain24', rain24Primary === null ? '—' : `${number(rain24Primary, 1)} mm`);
-  setText('#nextRain', nextRainIndex < 0 ? 'Sem sinal relevante' : toHour(h.time[nextRainIndex]));
+  const next24 = (h.precipitation || []).slice(start, start + 24);
+  const completeNext24 = next24.length === 24 && next24.every(v => typeof v === 'number' && Number.isFinite(v));
+  setText('#nextRain', nextRainIndex >= 0 ? toHour(h.time[nextRainIndex]) : completeNext24 ? 'Sem sinal relevante' : 'Dados insuficientes');
   setText('#consensusRain24', Number.isFinite(consensus.summary?.rain24) ? `${number(consensus.summary.rain24, 1)} mm` : '—');
   setText('#worstCaseRain', Number.isFinite(consensus.worstCaseRain) ? `${number(consensus.worstCaseRain, 1)} mm` : '—');
 }
@@ -238,15 +249,11 @@ function renderModels(primarySummary, modelSummaries) {
     const status = card.querySelector('.model-status');
     const temp = card.querySelector('.model-temp');
     const rain = card.querySelector('.model-rain');
-    if (summary && Number.isFinite(summary.temp)) {
-      temp.textContent = `${number(summary.temp, 1)} °C`;
-      rain.textContent = `${number(summary.rain24, 1)} mm`;
-      status.textContent = 'Disponível';
-    } else {
-      temp.textContent = '—';
-      rain.textContent = '—';
-      status.textContent = 'Indisponível';
-    }
+    const hasTemp = summary && Number.isFinite(summary.temp);
+    const hasRain = summary && Number.isFinite(summary.rain24);
+    temp.textContent = hasTemp ? `${number(summary.temp, 1)} °C` : '—';
+    rain.textContent = hasRain ? `${number(summary.rain24, 1)} mm` : '—';
+    status.textContent = hasTemp && hasRain ? 'Disponível' : hasTemp || hasRain ? 'Parcial' : 'Indisponível';
   }
 }
 
@@ -254,7 +261,8 @@ function renderHourly(primaryData, consensus) {
   const hourly = primaryData.hourly || {};
   const start = getIndexForNow(hourly.time, primaryData.current?.time);
   if (start < 0) {
-    setText('#hourlyChart', 'Previsão horária indisponível.');
+    setText('#hourlyChart', 'Previsão horária indisponível ou desatualizada.');
+    $('#hourlyItems').replaceChildren();
     return;
   }
   const list = getHourlySlice(hourly, start, 24);
@@ -434,7 +442,15 @@ async function loadPlace(place) {
 
   const primaryData = primaryResult.value;
   const targetHour = primaryData.current?.time || primaryData.hourly?.time?.[0];
-  const primarySummary = summarizeDataset(primaryData, 'bestmatch', 'Best Match', targetHour);
+  let primarySummary;
+  try {
+    primarySummary = summarizeDataset(primaryData, 'bestmatch', 'Best Match', targetHour);
+    if (!primaryData.current || !Array.isArray(primaryData.daily?.time)) throw new Error('Variáveis principais ausentes');
+  } catch {
+    notify('A fonte de previsão retornou dados incompletos. Atualize a consulta para tentar novamente.', true);
+    setText('#fetchedAt', 'Dados incompletos');
+    return;
+  }
   const modelSummaries = [];
   MODEL_CONFIG.filter(model => model.type !== 'primary').forEach((config, index) => {
     const result = modelResults[index];

@@ -79,7 +79,8 @@
     const verified=calibration?.version===3&&calibration?.weights&&typeof calibration.weights==='object'&&(calibration?.validation?.temp?.eligible===true||calibration?.validation?.rain?.eligible===true);
     const tempWeights={},rainWeights={};
     function factor(variable,id){
-      const w=verified ? calibration.weights?.[variable]?.[id] : null;
+      const allowed=verified && calibration.validation?.[variable]?.eligible===true;
+      const w=allowed ? calibration.weights?.[variable]?.[id] : null;
       return valid(w)&&w>0?clamp(w*3,0.5,1.8):1;
     }
     for(const m of models){
@@ -107,7 +108,8 @@
       agreement>=55?'Os modelos independentes apresentam diferenças; consulte as linhas por hora.':
       'Os modelos independentes divergem bastante. Acompanhe as atualizações antes de tomar decisões.';
     const calibrationApplied=verified&&models.some(m=>
-      valid(calibration.weights?.temp?.[m.id])||valid(calibration.weights?.rain?.[m.id]));
+      (calibration.validation?.temp?.eligible===true && valid(calibration.weights?.temp?.[m.id]) && calibration.weights.temp[m.id]>0) ||
+      (calibration.validation?.rain?.eligible===true && valid(calibration.weights?.rain?.[m.id]) && calibration.weights.rain[m.id]>0));
     return {
       summary:{ ...(reference||models[0]),temp,rain24,code:reference?.code??models[0]?.code },
       confidence:agreement,agreement,label,description,

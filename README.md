@@ -151,3 +151,15 @@ python3 tests/network_smoke.py
 ## Imagens WebP otimizadas
 
 Ícone 160×160; radar 400×300; logotipo 780×260; favicon 64×64 e banner social 1200×630 em WebP. A hero image de 1050×591 continua no desktop; o celular usa uma versão 520×293 via picture. O PNG de favicon e o JPG social são preservados como arquivos de compatibilidade.
+
+
+## Revisão técnica de estabilidade e transparência (29/10/2026)
+
+- Pesos de calibração agora respeitam a aprovação separada de temperatura e chuva, inclusive com pesos antigos ainda salvos.
+- Série horária encerrada não é apresentada como atual. Dados parciais são identificados no painel.
+- Resposta principal incompleta mostra erro controlado em vez de interromper o carregamento.
+- Indicador de chuva explicitamente identificado como estimativa de modelo, não medição observada.
+- Favicon SVG com fallback PNG; imagem de compartilhamento JPG para maior compatibilidade, mantendo os WebPs leves na interface.
+- Três novos testes de regressão, além dos testes de interface em desktop e mobile com dados meteorológicos simulados.
+
+**Limite:** não foi realizada comprovação de maior acurácia meteorológica com observações reais nesta revisão.
