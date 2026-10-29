@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#091723" />
+  <meta name="description" content="ClimaRadar Brasil: previsão de tempo com comparação de modelos ECMWF, GFS e ICON, chuva horária e acesso a fontes oficiais." />
+  <title>ClimaRadar Brasil — previsão meteorológica comparada</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="page-glow" aria-hidden="true"></div>
+  <div class="layout">
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="ClimaRadar Brasil — início">
+        <span class="brand-mark" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 14a9 9 0 0 1 18 0"/><path d="M6 14a6 6 0 0 1 12 0"/><path d="M9 14a3 3 0 0 1 6 0"/><path d="M12 14v6"/></svg></span>
+        <span>Clima<span class="accent">Radar</span><small>BRASIL</small></span>
+      </a>
+      <nav aria-label="Navegação principal">
+        <a href="#inicio">Visão geral</a>
+        <a href="#horas">Próximas horas</a>
+        <a href="#modelos">Modelos</a>
+        <a href="#fontes">Fontes oficiais</a>
+      </nav>
+      <span class="header-status"><span class="status-dot"></span> Previsão por dados meteorológicos</span>
+    </header>
+
+    <main id="inicio">
+      <div class="intro-row">
+        <div><span class="eyebrow">METEOROLOGIA EM DETALHES</span><h1>O tempo, com <em>mais contexto.</em></h1><p>Veja a previsão, compare modelos e acompanhe as fontes oficiais em um só lugar.</p></div>
+        <div class="search-wrapper">
+          <form id="searchForm" class="search-control" autocomplete="off">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+            <input id="cityInput" aria-label="Pesquisar cidade" placeholder="Pesquisar cidade no Brasil..." type="search" minlength="2" required />
+            <button type="submit" aria-label="Pesquisar" class="search-submit">Buscar</button>
+          </form>
+          <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="Sugestões de cidades"></div>
+          <button id="geolocate" class="location-btn" type="button"><span aria-hidden="true">◎</span> Usar minha localização</button>
+        </div>
+      </div>
+      <div id="message" class="message hidden" role="status" aria-live="polite"></div>
+      <div class="dashboard">
+        <section class="hero weather-card" aria-label="Condições atuais estimadas">
+          <div class="hero-top"><span class="pill soft"><span class="pulse-dot"></span> Condição meteorológica estimada</span><span id="fetchedAt" class="muted small">Atualizando...</span></div>
+          <div class="location-heading"><span class="pin">⌖</span><div><h2 id="cityName">Selecionando cidade...</h2><span id="todayLabel" class="muted">—</span></div></div>
+          <div class="hero-center">
+            <div class="big-weather"><span id="heroIcon" class="weather-icon" aria-hidden="true">☁️</span><div><div class="temperature"><span id="currentTemp">—</span><span class="deg">°</span></div><div id="weatherDesc" class="weather-desc">Buscando previsão...</div></div></div>
+            <div class="minmax"><span>Máx. <strong id="tempMax">—</strong>°</span><span>Min. <strong id="tempMin">—</strong>°</span></div>
+          </div>
+          <div class="metrics">
+            <div><span class="metric-icon">◉</span><small>Sensação</small><strong id="feelsLike">—</strong></div>
+            <div><span class="metric-icon">◌</span><small>Umidade</small><strong id="humidity">—</strong></div>
+            <div><span class="metric-icon">↗</span><small>Vento</small><strong id="wind">—</strong></div>
+            <div><span class="metric-icon">☂</span><small>Chuva agora*</small><strong id="rainNow">—</strong></div>
+          </div>
+          <p class="card-footnote">*Dados atuais estimados pelo modelo meteorológico, não por estação local. Temperatura e chuva podem variar dentro do município.</p>
+        </section>
+
+        <section class="rain-panel weather-card" aria-label="Previsão de chuva">
+          <div class="section-card-head"><div><span class="eyebrow">CHUVA NA REGIÃO</span><h3>Vai chover?</h3></div><span class="rain-mark" aria-hidden="true">☔</span></div>
+          <div class="rain-risk"><strong id="rainChance">—</strong><div><span>Maior chance de chuva nas próximas 12h</span><small id="riskLabel">Aguardando dados meteorológicos</small></div></div>
+          <div class="progress-track"><div id="rainBar" class="progress-fill"></div></div>
+          <div class="divider"></div>
+          <div class="rain-info"><div><small>Precipitação prevista (24h)</small><strong id="rain24">—</strong></div><div><small>Próxima janela de chuva</small><strong id="nextRain">—</strong></div></div>
+          <div class="radar-notice"><span class="radar-rings">◉</span><div><strong>Radar ao vivo</strong><p>Confira as nuvens de chuva na cobertura dos radares de Bauru e Presidente Prudente.</p><a href="https://www.ipmetradar.com.br/home/webadm/2mobileGis.php" target="_blank" rel="noopener noreferrer">Abrir radar do IPMet ↗</a></div></div>
+        </section>
+      </div>
+
+      <section class="data-section" id="horas">
+        <div class="section-heading"><div><span class="eyebrow">PREVISÃO POR HORA</span><h2>Próximas 24 horas</h2></div><span class="muted small">Previsão de modelos, sujeita a mudanças</span></div>
+        <div class="chart-container weather-card"><div class="chart-legend"><span><i class="legend-line"></i> Temperatura</span><span><i class="legend-bars"></i> Probabilidade de chuva</span></div><div id="hourlyChart" class="hourly-chart" aria-label="Gráfico horário de temperatura e chance de chuva"><div class="skeleton-chart"></div></div><div id="hourlyItems" class="hourly-items" aria-label="Previsão em horários selecionados"></div></div>
+      </section>
+
+      <section class="data-section" id="modelos">
+        <div class="section-heading"><div><span class="eyebrow">CONFERÊNCIA CRUZADA</span><h2>O que dizem os modelos?</h2></div><span class="small muted">Temperatura e chuva acumulada nas próximas 24h</span></div>
+        <div class="model-grid">
+          <article class="model-card weather-card" data-model="ecmwf"><div class="model-head"><span class="model-icon">E</span><div><h3>ECMWF</h3><p>Modelo europeu</p></div><span class="model-status">...</span></div><div class="model-values"><div><small>Temperatura próxima hora</small><strong class="model-temp">—</strong></div><div><small>Chuva em 24h</small><strong class="model-rain">—</strong></div></div></article>
+          <article class="model-card weather-card" data-model="gfs"><div class="model-head"><span class="model-icon blue">G</span><div><h3>GFS</h3><p>Modelo americano · NOAA</p></div><span class="model-status">...</span></div><div class="model-values"><div><small>Temperatura próxima hora</small><strong class="model-temp">—</strong></div><div><small>Chuva em 24h</small><strong class="model-rain">—</strong></div></div></article>
+          <article class="model-card weather-card" data-model="icon"><div class="model-head"><span class="model-icon purple">I</span><div><h3>ICON</h3><p>Modelo alemão · DWD</p></div><span class="model-status">...</span></div><div class="model-values"><div><small>Temperatura próxima hora</small><strong class="model-temp">—</strong></div><div><small>Chuva em 24h</small><strong class="model-rain">—</strong></div></div></article>
+        </div>
+        <div class="consensus weather-card"><div class="consensus-icon">≋</div><div><strong id="consensusTitle">Comparação indisponível</strong><p id="consensusText">Aguarde o carregamento dos modelos.</p></div></div>
+        <p class="method-note">A comparação exibe divergências entre modelos, <strong>não representa taxa de acerto nem probabilidade estatística de precisão</strong>. As previsões podem compartilhar dados de origem. A calibração com estações será adicionada em uma futura etapa.</p>
+      </section>
+
+      <section class="data-section" id="semana"><div class="section-heading"><div><span class="eyebrow">PLANEJE SEUS DIAS</span><h2>Próximos 7 dias</h2></div><span class="small muted">Dados do modelo combinado Open-Meteo</span></div><div id="dailyCards" class="daily-grid"><div class="weather-card daily-placeholder">Carregando...</div></div></section>
+
+      <section class="data-section" id="fontes"><div class="section-heading"><div><span class="eyebrow">TRANSPARÊNCIA</span><h2>Fontes e monitoramento oficial</h2></div></div>
+        <div class="source-grid">
+          <a href="https://www.ipmetradar.com.br/home/webadm/2mobileGis.php" rel="noopener noreferrer" target="_blank" class="source-card weather-card"><span class="source-graphic">📡</span><h3>IPMet / Unesp</h3><p>Radar meteorológico e deslocamento das chuvas. Cobertura regional.</p><span>Consultar radar ↗</span></a>
+          <a href="https://avisos.inmet.gov.br/" rel="noopener noreferrer" target="_blank" class="source-card weather-card"><span class="source-graphic">⚠️</span><h3>INMET</h3><p>Avisos meteorológicos oficiais de chuvas intensas, ventos e outros riscos.</p><span>Consultar alertas ↗</span></a>
+          <a href="https://www.cptec.inpe.br/" rel="noopener noreferrer" target="_blank" class="source-card weather-card"><span class="source-graphic">🛰️</span><h3>CPTEC / INPE</h3><p>Previsões para o Brasil, satélites e análises de tempo.</p><span>Consultar CPTEC ↗</span></a>
+          <a href="https://www.msn.com/pt-br/clima" rel="noopener noreferrer" target="_blank" class="source-card weather-card"><span class="source-graphic">🌤️</span><h3>MSN Clima</h3><p>Referência visual e opção externa para conferência manual.</p><span>Consultar MSN ↗</span></a>
+        </div>
+      </section>
+    </main>
+    <footer><div><strong>ClimaRadar Brasil</strong><span>Previsões meteorológicas não substituem alertas de autoridades e da Defesa Civil.</span></div><div>Dados de previsão: <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> (CC BY 4.0) · Geocodificação: <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a></div></footer>
+  </div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
