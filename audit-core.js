@@ -108,7 +108,7 @@
     const temp = hourly[`temperature_2m_previous_day${lead}`];
     const rain = hourly[`precipitation_previous_day${lead}`];
     const index = new Map(time.map((t,i) => [String(t).slice(0,16),i]));
-    let nTemp = 0, errTemp = 0, biasTemp = 0, nRain = 0, errRain = 0, hits = 0, rainRight = 0;
+    let nTemp = 0, errTemp = 0, biasTemp = 0, nRain = 0, errRain = 0, hits = 0, rainRight = 0, wetError = 0, wetHours = 0;
     for (const record of observations) {
       const i = index.get(record.time);
       if (i === undefined) continue;
@@ -121,7 +121,7 @@
       if (finite(record.rain) && finite(predictedRain) && predictedRain >= 0) {
         errRain += Math.abs(predictedRain - record.rain);
         rainRight += (predictedRain >= 0.2) === (record.rain >= 0.2) ? 1 : 0;
-        hits += record.rain >= 0.2 ? 1 : 0;
+        if (record.rain >= 0.2) { hits++; wetError += Math.abs(predictedRain - record.rain); wetHours++; }
         nRain++;
       }
     }
@@ -130,13 +130,58 @@
       tempBias: nTemp ? biasTemp / nTemp : null,
       nRain, rainMae: nRain ? errRain / nRain : null,
       rainHitRate: nRain ? rainRight / nRain * 100 : null,
-      rainyHours: hits
+      rainyHours: hits, wetHours, rainMaeWet: wetHours ? wetError / wetHours : null
     };
+  }
+  /** Compara somente horas em comum a modelos que possuem dados suficientes.
+   * Sem isso, o MAE de modelos distintos pode ser calculado em meteorologias diferentes.
+   * O conjunto é escolhido por disponibilidade, nunca pelo menor erro.
+   */
+  function evaluateComparable(observations, candidates, lead = 1) {
+    const withTimes = candidates.filter(x => x.hourly?.time?.length);
+    const original = withTimes.map(x => ({ ...x, initial: evaluate(observations,x.hourly,lead) }));
+    const tempCandidates = original.filter(x => x.initial.nTemp >= 24);
+    const rainCandidates = original.filter(x => x.initial.nRain >= 24);
+    const pred = (hourly, name, time) => {
+      const index = hourly.time.indexOf(time);
+      const values = hourly[name];
+      return index >= 0 && Array.isArray(values) ? values[index] : null;
+    };
+    const tempKey = `temperature_2m_previous_day${lead}`;
+    const rainKey = `precipitation_previous_day${lead}`;
+    function commonRows(candidates, observationField, modelField) {
+      if(candidates.length < 2) return [];
+      return observations.filter(obs => finite(obs[observationField]) && candidates.every(x => {
+        const v=pred(x.hourly,modelField,obs.time);
+        return finite(v) && (observationField === 'rain' ? v >= 0 && v <= 500 : v > -90 && v < 75);
+      }));
+    }
+    const commonTemp = commonRows(tempCandidates,'temp',tempKey);
+    const commonRain = commonRows(rainCandidates,'rain',rainKey);
+    const resultRows = candidates.map(candidate => {
+      const isTemp = tempCandidates.some(x=>x.id===candidate.id) && commonTemp.length>=24;
+      const isRain = rainCandidates.some(x=>x.id===candidate.id) && commonRain.length>=24;
+      if (!candidate.hourly?.time?.length) return { ...candidate, result:null };
+      // evaluate() não computa métricas da variável que estiver nula.
+      const tempOnly=commonTemp.map(x=>({ ...x,rain:null }));
+      const rainOnly=commonRain.map(x=>({ ...x,temp:null }));
+      const tempResult=isTemp?evaluate(tempOnly,candidate.hourly,lead):null;
+      const rainResult=isRain?evaluate(rainOnly,candidate.hourly,lead):null;
+      return { ...candidate, result: {
+        nTemp:tempResult?.nTemp||0,tempMae:tempResult?.tempMae??null,
+        tempBias:tempResult?.tempBias??null,
+        nRain:rainResult?.nRain||0,rainMae:rainResult?.rainMae??null,
+        rainHitRate:rainResult?.rainHitRate??null,rainyHours:rainResult?.rainyHours||0,
+        wetHours:rainResult?.wetHours||0,rainMaeWet:rainResult?.rainMaeWet??null
+      }};
+    });
+    return { rows:resultRows,commonTempHours:commonTemp.length,commonRainHours:commonRain.length,
+      tempEligibleModels:tempCandidates.length,rainEligibleModels:rainCandidates.length };
   }
   function distanceKm(lat1,lon1,lat2,lon2) {
     const radians = d => d * Math.PI / 180;
     const a = Math.sin(radians(lat2-lat1)/2)**2 + Math.cos(radians(lat1))*Math.cos(radians(lat2))*Math.sin(radians(lon2-lon1)/2)**2;
     return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
-  return { normalize, csvLine, numeric, dateUtc, hour, parseObservations, evaluate, distanceKm };
+  return { normalize, csvLine, numeric, dateUtc, hour, parseObservations, evaluate, evaluateComparable, distanceKm };
 });

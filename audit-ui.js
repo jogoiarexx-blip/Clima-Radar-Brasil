@@ -5,8 +5,9 @@
   const core = window.ClimaAudit;
   const models = [
     { id: 'ecmwf', label: 'ECMWF IFS', model: 'ecmwf_ifs' },
-    { id: 'gfs', label: 'GFS Seamless', model: 'gfs_seamless' },
-    { id: 'icon', label: 'ICON Global', model: 'dwd_icon_global' }
+    { id: 'gfs', label: 'GFS Seamless', model: 'ncep_gfs_seamless' },
+    { id: 'icon', label: 'ICON Global', model: 'icon_global' },
+    { id: 'gem', label: 'GEM Canada', model: 'cmc_gem_seamless' }
   ];
   let station = null;
   let lastReport = null;
@@ -60,28 +61,42 @@
     return el;
   }
   function buildCalibration(report) {
-    const eligible = report.rows.filter(row => row.result && row.result.nTemp >= 12 && Number.isFinite(row.result.tempMae) && row.result.tempMae > 0);
-    if (eligible.length < 2) return null;
-    const scores = eligible.map(row => ({ id: row.id, score: 1 / row.result.tempMae }));
-    const total = scores.reduce((acc, item) => acc + item.score, 0) || 1;
-    const weights = Object.fromEntries(scores.map(item => [item.id, item.score / total]));
+    // Previsões anteriores a 24h são a base de referência. Outros horizontes
+    // servem para auditoria, sem extrapolar automaticamente sua habilidade.
+    if (report.lead !== 1 || !report.comparable || report.comparable.commonTempHours < 72) return null;
+    const ageDays = (Date.now() - Date.parse(report.end + 'T23:59:59Z')) / 86400000;
+    if (!Number.isFinite(ageDays) || ageDays < -1 || ageDays > 45) return null;
+    const tempEligible = report.rows.filter(row =>
+      row.result?.nTemp >= 72 && Number.isFinite(row.result.tempMae) && row.result.tempMae >= 0);
+    if (tempEligible.length < 2) return null;
+    const calculateWeights = (rows, key) => {
+      const values = rows.map(row => ({ id: row.id, score: 1 / Math.max(0.2, row.result[key]) }));
+      const total = values.reduce((acc, item) => acc + item.score, 0);
+      return Object.fromEntries(values.map(item => [item.id, item.score / total]));
+    };
+    const rainyEligible = report.rows.filter(row =>
+      row.result?.nRain >= 72 && row.result.wetHours >= 5 &&
+      Number.isFinite(row.result.rainMaeWet));
+    // Não calibrar chuva em série predominantemente seca.
+    const rainWeights = rainyEligible.length >= 2 && report.comparable.commonRainHours >= 72
+      ? calculateWeights(rainyEligible, 'rainMaeWet') : null;
     return {
-      version: 1,
+      version: 2,
       createdAt: new Date().toISOString(),
-      station: report.stationName,
-      coords: report.coords,
-      start: report.start,
-      end: report.end,
-      lead: report.lead,
-      weights,
-      note: 'Pesos normalizados a partir do inverso do erro médio absoluto de temperatura na auditoria local.'
+      station: report.stationName, coords: report.coords,
+      start: report.start, end: report.end, lead: report.lead,
+      sample: { tempHours: report.comparable.commonTempHours,
+        rainHours: report.comparable.commonRainHours,
+        rainyHours: rainyEligible[0]?.result.wetHours ?? 0 },
+      weights: { temp: calculateWeights(tempEligible,'tempMae'), rain: rainWeights },
+      note: 'Ajuste exploratório local de pesos térmicos e de chuva separados, em horas comuns aos modelos, sem garantia de ganho fora da amostra.'
     };
   }
   function renderReport(report) {
     $('#auditResult').classList.remove('hidden');
     const body = $('#auditBody');
     body.replaceChildren();
-    const withTemp = report.rows.filter(row => row.result && row.result.nTemp >= 12).sort((a, b) => a.result.tempMae - b.result.tempMae);
+    const withTemp = report.rows.filter(row => row.result && row.result.nTemp >= 24).sort((a, b) => a.result.tempMae - b.result.tempMae);
     const winner = withTemp[0];
     report.rows.forEach(row => {
       const tr = document.createElement('tr');
@@ -92,18 +107,22 @@
         cell(r ? `${number(r.tempMae, 2)} °C` : '—'),
         cell(r ? `${number(r.tempBias, 2)} °C` : '—'),
         cell(r && r.nRain ? `${number(r.rainMae, 2)} mm/h` : '—'),
-        cell(row.error ? 'Indisponível: ' + row.error : (r?.nTemp < 12 ? 'Amostra insuficiente' : 'Comparado'))
+        cell(r && r.wetHours ? `${number(r.rainMaeWet, 2)} mm/h` : '—'),
+        cell(row.error ? 'Indisponível: ' + row.error : (r?.nTemp < 24 ? 'Amostra insuficiente' : 'Comparado'))
       );
       if (winner && winner.id === row.id) tr.classList.add('best-model');
       body.appendChild(tr);
     });
     $('#auditHeadline').textContent = winner ? `${winner.label}: menor erro médio de temperatura nesta amostra` : 'Sem amostra suficiente para classificar os modelos';
     $('#auditInterpretation').textContent = winner
-      ? `O ${winner.label} teve erro absoluto médio de ${number(winner.result.tempMae, 2)} °C em ${winner.result.nTemp} horas válidas. O resultado vale somente para esta estação, este período e esta antecedência.`
-      : 'É necessário obter pelo menos 12 comparações horárias válidas em um modelo. Confira a data do arquivo e a disponibilidade das previsões arquivadas.';
-    $('#auditScope').textContent = `Estação: ${report.stationName} · Período (UTC): ${report.start} a ${report.end} · Antecedência: ${report.lead * 24}h · Observações no período: ${report.observations.length} · ${distanceWarning(report.coords)}`;
+      ? `O ${winner.label} teve erro absoluto médio de ${number(winner.result.tempMae, 2)} °C em ${winner.result.nTemp} horas válidas. A comparação usa as mesmas horas para todos os modelos elegíveis. Não comprova superioridade futura.`
+      : 'São necessárias pelo menos 24 horas válidas e simultâneas em dois modelos para compará-los. Confira a data do arquivo e a disponibilidade das previsões arquivadas.';
+    $('#auditScope').textContent = `Estação: ${report.stationName} · Período (UTC): ${report.start} a ${report.end} · Antecedência: ${report.lead * 24}h · Observações no período: ${report.observations.length} · Horas comuns temperatura: ${report.comparable?.commonTempHours ?? 0} · Horas comuns chuva: ${report.comparable?.commonRainHours ?? 0} · ${distanceWarning(report.coords)}`;
     $('#exportAudit').disabled = false;
     $('#applyAuditCalibration').disabled = !buildCalibration(report);
+    $('#auditCalibrationNote').textContent = buildCalibration(report)
+      ? 'Amostra habilitada para pesos experimentais (24h). Temperatura e chuva são calibradas separadamente; chuva só com registros chuvosos suficientes.'
+      : 'Calibração bloqueada: requer ≥72 horas comuns para temperatura, ≥2 modelos e dados dos últimos 45 dias, com antecedência de 24h. Sem chuva suficiente, apenas temperatura pode ser calibrada.';
   }
 
   $('#stationCsv').addEventListener('change', async event => {
@@ -160,15 +179,20 @@
     const outcomes = await Promise.allSettled(models.map(model => fetchArchive(model, { start: begin, end: lastDay }, coords, lead)));
     if (run !== currentRun) return;
     $('#compareAudit').disabled = false;
-    const rows = models.map((model, index) => {
+    const candidates = models.map((model, index) => {
       const outcome = outcomes[index];
-      if (outcome.status === 'fulfilled') {
-        try { return { ...model, result: core.evaluate(subset, outcome.value, lead) }; }
-        catch (err) { return { ...model, error: err.message }; }
-      }
-      return { ...model, error: outcome.reason?.name === 'AbortError' ? 'tempo excedido' : String(outcome.reason?.message || 'erro de rede').slice(0, 100) };
+      return outcome.status === 'fulfilled'
+        ? { ...model, hourly: outcome.value }
+        : { ...model, error: outcome.reason?.name === 'AbortError'
+          ? 'tempo excedido' : String(outcome.reason?.message || 'erro de rede').slice(0, 100) };
     });
-    lastReport = { rows, stationName: station.station || 'Estação importada', coords, start: begin, end: lastDay, lead, observations: subset };
+    const comparable = core.evaluateComparable(subset, candidates, lead);
+    const rows = comparable.rows.map(row => ({
+      id: row.id, label: row.label, result: row.result,
+      error: row.error || (!row.result?.nTemp && !row.result?.nRain ? 'Sem amostra comum válida' : null)
+    }));
+    lastReport = { rows, comparable, stationName: station.station || 'Estação importada',
+      coords, start: begin, end: lastDay, lead, observations: subset };
     renderReport(lastReport);
     const available = rows.filter(row => row.result && row.result.nTemp > 0).length;
     status(available ? `Auditoria concluída: ${available} modelo(s) com temperatura comparável.` : 'Os modelos não retornaram valores comparáveis. Veja os detalhes na tabela.', available ? 'ok' : 'error');
@@ -178,12 +202,12 @@
     if (!lastReport) return;
     const calibration = buildCalibration(lastReport);
     if (!calibration) {
-      status('São necessários pelo menos dois modelos com 12 horários válidos cada para calibrar os pesos.', 'error');
+      status('Calibração exige ao menos 72 horas comuns, dois modelos, dados recentes e antecedência de 24h.', 'error');
       return;
     }
     if (typeof window.ClimaRadarSetCalibration === 'function') {
       window.ClimaRadarSetCalibration(calibration);
-      status('Calibração salva. Os pesos só serão aplicados a cidades até 50 km da estação do CSV; isso não comprova ganho de acerto futuro.', 'ok');
+      status('Calibração experimental salva: temperatura e chuva usam erros distintos. Só vale até 50 km da estação e por 45 dias após o fim da amostra.', 'ok');
     } else {
       status('A interface principal ainda não está pronta para receber calibração.', 'error');
     }
@@ -199,7 +223,7 @@
   $('#exportAudit').addEventListener('click', () => {
     if (!lastReport) return;
     const csv = [
-      ['modelo', 'antecedencia_h', 'estacao', 'latitude', 'longitude', 'inicio_utc', 'fim_utc', 'n_temp', 'mae_temp_c', 'bias_temp_c', 'n_chuva', 'mae_chuva_mm_h', 'horas_com_chuva_observada', 'status'],
+      ['modelo', 'antecedencia_h', 'estacao', 'latitude', 'longitude', 'inicio_utc', 'fim_utc', 'n_temp', 'mae_temp_c', 'bias_temp_c', 'n_chuva', 'mae_chuva_mm_h', 'horas_com_chuva_observada', 'mae_chuva_eventos_mm_h', 'status'],
       ...lastReport.rows.map(row => [
         row.label,
         lastReport.lead * 24,
@@ -214,6 +238,7 @@
         row.result?.nRain ?? '',
         row.result?.rainMae ?? '',
         row.result?.rainyHours ?? '',
+        row.result?.rainMaeWet ?? '',
         row.error || (row.result?.nTemp < 12 ? 'amostra insuficiente' : 'ok')
       ])
     ].map(values => values.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(';')).join('\r\n');

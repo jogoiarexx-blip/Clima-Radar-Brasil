@@ -75,8 +75,20 @@
     const freshness = minutes > 40 ? ` Último quadro com cerca de ${minutes} minutos de atraso.` : '';
     status(`Quadro observado às ${clock} (horário de Brasília).${freshness} Imagem de radar: a ausência de cor não garante ausência de chuva.`);
     $('#radarFrameRange').value = String(i);
+    updateSteps();
   }
 
+  function stepFrame(delta) {
+    if (!state.meta?.frames.length) return;
+    if (state.frameTimer) {clearTimeout(state.frameTimer);state.frameTimer=null;}
+    const current=Math.max(0, state.lastFrameIndex);
+    setFrame(Math.max(0,Math.min(current+delta,state.meta.frames.length-1)));
+  }
+  function updateSteps() {
+    const previous=$('#radarPrev'), next=$('#radarNext');
+    if(previous) previous.disabled=!state.meta||state.lastFrameIndex<=0;
+    if(next) next.disabled=!state.meta||state.lastFrameIndex>=state.meta.frames.length-1;
+  }
   function queueFrame(index) {
     if (state.frameTimer) clearTimeout(state.frameTimer);
     state.pendingFrame = index;
@@ -106,6 +118,8 @@
         $('#radarObservedAt').textContent = 'Radar indisponível';
         if (state.overlay && state.map) state.map.removeLayer(state.overlay);
         state.overlay = null;
+        state.meta = null;
+        updateSteps();
       }
     } finally { $('#radarRefresh').disabled = false; }
   }
@@ -158,6 +172,8 @@
     try { await state.initializing; } finally { state.initializing = null; }
   }
 
+  $('#radarPrev')?.addEventListener('click',()=>stepFrame(-1));
+  $('#radarNext')?.addEventListener('click',()=>stepFrame(1));
   $('#radarFrameRange').addEventListener('input', event => queueFrame(Number(event.target.value)));
   $('#radarCenter').addEventListener('click', () => {
     if (!state.map) { init(); return; }

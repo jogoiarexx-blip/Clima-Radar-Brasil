@@ -40,8 +40,8 @@
         <div class="hero-copy">
           <p class="eyebrow"><span class="eyebrow-rule"></span> INTELIGÊNCIA METEOROLÓGICA PARA O BRASIL</p>
           <h1>O tempo, <em>com contexto.</em></h1>
-          <p class="hero-text">Previsões lado a lado, divergências à vista e radar de chuva em um único painel. Informação meteorológica para decidir melhor.</p>
-          <div class="hero-features"><span>04 modelos consultados</span><span>Radar observado</span><span>Análise por cidade</span></div>
+          <p class="hero-text">Modelos independentes comparados no mesmo horário, divergências visíveis e radar de chuva observado. Mais contexto para decidir melhor.</p>
+          <div class="hero-features"><span>04 modelos + referência</span><span>Radar observado</span><span>Análise por cidade</span></div>
         </div>
         <div class="hero-panel weather-card">
           <div class="search-head">
@@ -60,6 +60,9 @@
             <p id="searchHelp" class="search-help">Busque uma cidade para montar a previsão multimodelo.</p>
             <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="Sugestões de cidades"></div>
           </form>
+          <div class="city-favorites" aria-label="Cidades recentes">
+            <span>Recentes</span><div id="recentCities" class="recent-city-list"><span class="city-favorites-empty">Suas consultas aparecerão aqui.</span></div>
+          </div>
           <button id="useLocation" class="ghost-button" type="button">Usar minha localização</button>
           <div id="message" class="message hidden" role="status" aria-live="polite"></div>
         </div>
@@ -73,7 +76,7 @@
               <p class="mini-label">Leitura multimodelo · Agora</p>
               <h2 id="cityName">Carregando…</h2>
             </div>
-            <span class="pill" id="confidenceBadge">Calculando confiança</span>
+            <span class="pill" id="confidenceBadge">Calculando acordo</span>
           </div>
           <p class="current-date" id="todayLabel">—</p>
           <div class="current-main">
@@ -101,7 +104,7 @@
               <p class="mini-label">Convergência dos modelos</p>
               <h2 id="consensusTitle">Aguardando comparação</h2>
             </div>
-            <span class="confidence-score"><span id="confidenceScore">—</span><small>/100</small></span>
+            <span class="confidence-score"><span id="confidenceScore">—</span><small>/100*</small></span>
           </div>
           <p class="consensus-text" id="consensusText">Assim que os modelos forem consultados, o ClimaRadar mede a divergência para indicar estabilidade ou incerteza.</p>
           <div class="consensus-stats">
@@ -125,7 +128,7 @@
           </div>
           <div class="rain-score-row">
             <div>
-              <span class="rain-kicker">Risco estimado</span>
+              <span class="rain-kicker">Maior probabilidade horária · 12h</span>
               <strong id="rainChance">—</strong>
               <p id="riskLabel">Aguardando leitura</p>
             </div>
@@ -153,7 +156,7 @@
           <div class="radar-map-shell">
             <div class="radar-map-head">
               <div class="radar-heading-inline"><span class="radar-live-dot"></span><strong>Radar meteorológico</strong><span id="radarObservedAt" class="radar-head-time">Aguardando dados</span></div>
-              <div class="radar-actions"><button id="radarCenter" class="radar-utility" type="button" aria-label="Centralizar mapa na cidade consultada">Centralizar</button><button id="radarRefresh" class="radar-utility" type="button">Atualizar</button></div>
+              <div class="radar-actions"><button id="radarPrev" class="radar-utility" type="button" aria-label="Quadro anterior do radar" disabled>Anterior</button><button id="radarNext" class="radar-utility" type="button" aria-label="Próximo quadro do radar" disabled>Próximo</button><button id="radarCenter" class="radar-utility" type="button" aria-label="Centralizar mapa na cidade consultada">Centralizar</button><button id="radarRefresh" class="radar-utility" type="button">Atualizar</button></div>
             </div>
             <div id="radarMap" class="radar-map" role="region" aria-label="Mapa interativo de radar meteorológico" tabindex="0">
               <div class="radar-map-placeholder" id="radarPlaceholder"><img src="./assets/radar-placeholder.svg" width="120" height="120" alt=""/><span>Carregando mapa de precipitação…</span></div>
@@ -238,7 +241,31 @@
               <div><span>Chuva 24h</span><strong class="model-rain">—</strong></div>
             </div>
           </article>
+          <article class="weather-card model-card" data-model="gem">
+            <div class="model-head">
+              <div class="model-badge">GM</div>
+              <div><h3>GEM</h3><p>Canadá global</p></div>
+              <span class="model-status">Aguardando</span>
+            </div>
+            <div class="model-values">
+              <div><span>Temperatura</span><strong class="model-temp">—</strong></div>
+              <div><span>Chuva 24h</span><strong class="model-rain">—</strong></div>
+            </div>
+          </article>
         </div>
+        <article class="weather-card compare-workspace" aria-labelledby="comparisonHeading">
+          <div class="compare-heading">
+            <div><span class="mini-label">LINHAS POR MODELO</span><h3 id="comparisonHeading">Compare as próximas 24 horas</h3></div>
+            <div class="compare-switch" role="group" aria-label="Variável meteorológica">
+              <button type="button" id="compareTemp" class="is-active">Temperatura</button>
+              <button type="button" id="compareRain">Precipitação</button>
+            </div>
+          </div>
+          <div id="comparisonLegend" class="comparison-legend" aria-label="Legenda dos modelos"></div>
+          <div id="comparisonGraph" class="comparison-graph" aria-live="polite">Aguardando as séries horárias dos modelos…</div>
+          <p id="comparisonDetails" class="comparison-details">Temperatura em °C e precipitação em mm por hora. Comparação no mesmo fuso e horário; sem interpolar valores ausentes.</p>
+          <p class="comparison-caution">* O indicador de concordância não é uma porcentagem comprovada de acertos. Para comparar precisão real, use a auditoria histórica com medições de estação.</p>
+        </article>
       </section>
 
       <section class="section-block">
@@ -282,9 +309,9 @@
           <ol class="steps-list">
             <li>O sistema consulta vários modelos com a mesma coordenada.</li>
             <li>Calcula a média ponderada e a mediana para reduzir leituras fora do padrão.</li>
-            <li>Se um modelo divergir muito, seu peso diminui automaticamente.</li>
-            <li>A confiança final cresce quando a divergência térmica e de chuva é baixa.</li>
-            <li>Se houver auditoria local válida, os pesos podem ser calibrados pelo erro observado.</li>
+            <li>O Best Match funciona como referência; não conta como confirmação independente.</li>
+            <li>O índice de concordância (0–100) mede proximidade entre os quatro modelos independentes, não porcentagem de acertos.</li>
+            <li>Uma auditoria local pode ajustar os pesos exploratoriamente; isso não comprova ganho de precisão futura.</li>
           </ol>
         </article>
         <article class="weather-card methodology-card">
@@ -296,7 +323,7 @@
           </div>
           <ul class="bullet-list">
             <li>Mostra quando os modelos concordam e quando estão instáveis.</li>
-            <li>Não apresenta precisão “inventada” nem promete acerto absoluto.</li>
+            <li>Não confunde concordância com taxa de acerto, nem cria probabilidades combinando indicadores diferentes.</li>
             <li>Não substitui avisos oficiais do INMET, Defesa Civil ou radares meteorológicos.</li>
             <li>Permite auditoria local com medições reais para melhorar o uso do sistema.</li>
           </ul>
@@ -309,7 +336,7 @@
             <p class="eyebrow">AUDITORIA COM MEDIÇÕES REAIS</p>
             <h2>Comparar modelos com CSV horário do INMET</h2>
           </div>
-          <p class="section-caption">Use a auditoria para descobrir qual modelo foi melhor na sua região e, se quiser, aplicar a calibração local ao consenso principal.</p>
+          <p class="section-caption">Compare ECMWF, GFS, ICON e GEM nas mesmas horas de observação. Se os dados forem suficientes, aplique pesos locais exploratórios separados para temperatura e chuva.</p>
         </div>
         <article class="weather-card audit-panel">
           <form id="auditForm" class="audit-form">
@@ -342,6 +369,7 @@
             </div>
           </form>
           <div id="auditStatus" class="audit-feedback">Importe um CSV do INMET para iniciar.</div>
+          <p id="auditCalibrationNote" class="audit-calibration-note" aria-live="polite">A comparação exige horas válidas simultâneas. Calibração exige 72 horas comuns recentes e antecedência de 24h; chuva precisa de eventos observados suficientes.</p>
           <section id="auditResult" class="audit-result hidden">
             <div class="audit-summary">
               <h3 id="auditHeadline">Sem análise</h3>
@@ -351,7 +379,7 @@
             <div class="table-wrap">
               <table class="audit-table">
                 <thead>
-                  <tr><th>Modelo</th><th>Horas válidas</th><th>Erro médio temp.</th><th>Bias temp.</th><th>Erro médio chuva</th><th>Status</th></tr>
+                  <tr><th>Modelo</th><th>Horas comuns</th><th>Erro médio temp.</th><th>Viés temp.</th><th>Erro médio chuva</th><th>Erro em horas chuvosas</th><th>Status</th></tr>
                 </thead>
                 <tbody id="auditBody"></tbody>
               </table>
@@ -414,7 +442,9 @@
     <a href="#modelos" class="mobile-tab"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 16v-4M12 16V9M16 16V7"/></svg></span>Modelos</a>
     <a href="#auditoria" class="mobile-tab"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l3 3v15H4V3h3ZM8 10h8M8 14h8M8 18h5"/></svg></span>Análise</a>
   </nav>
+  <script src="./forecast-core.js" defer></script>
   <script src="./app.js" defer></script>
+  <script src="./model-compare.js" defer></script>
   <script src="./audit-core.js" defer></script>
   <script src="./audit-ui.js" defer></script>
   <script src="./radar-core.js" defer></script>

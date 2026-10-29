@@ -4,12 +4,13 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const state = { place: null, loadingId: 0, searchId: 0, suggestions: [], abort: null, lastConsensus: null };
 const MAX_DAYS = 7;
-const CALIBRATION_KEY = 'climaradar.audit.weights.v1';
+const CALIBRATION_KEY = 'climaradar.audit.weights.v2';
 const MODEL_CONFIG = [
   { id: 'bestmatch', label: 'Best Match', type: 'primary', baseWeight: 0.22 },
-  { id: 'ecmwf', label: 'ECMWF', api: 'https://api.open-meteo.com/v1/ecmwf', model: 'ecmwf_ifs', baseWeight: 0.34 },
-  { id: 'gfs', label: 'GFS', api: 'https://api.open-meteo.com/v1/gfs', model: 'gfs_seamless', baseWeight: 0.20 },
-  { id: 'icon', label: 'ICON', api: 'https://api.open-meteo.com/v1/dwd-icon', model: 'dwd_icon_global', baseWeight: 0.24 }
+  { id: 'ecmwf', label: 'ECMWF', api: 'https://api.open-meteo.com/v1/forecast', model: 'ecmwf_ifs', baseWeight: 0.32 },
+  { id: 'gfs', label: 'GFS', api: 'https://api.open-meteo.com/v1/forecast', model: 'ncep_gfs_seamless', baseWeight: 0.23 },
+  { id: 'icon', label: 'ICON', api: 'https://api.open-meteo.com/v1/forecast', model: 'icon_global', baseWeight: 0.23 },
+  { id: 'gem', label: 'GEM', api: 'https://api.open-meteo.com/v1/forecast', model: 'cmc_gem_seamless', baseWeight: 0.22 }
 ];
 const DAY_FORMAT = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
 const NOW_FORMAT = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -119,7 +120,7 @@ function getCalibration() {
     const raw = localStorage.getItem(CALIBRATION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || !parsed.weights) return null;
+    if (!parsed || parsed.version !== 2 || !parsed.weights?.temp) return null;
     return parsed;
   } catch {
     return null;
@@ -127,7 +128,7 @@ function getCalibration() {
 }
 function setCalibrationState() {
   const calibration = getCalibration();
-  setText('#calibrationState', calibration ? 'Salva (até 50 km)' : 'Sem calibração');
+  setText('#calibrationState', calibration ? 'Salva (até 50 km; 45 dias)' : 'Sem calibração');
   window.ClimaRadarCalibration = calibration;
 }
 window.ClimaRadarSetCalibration = function (payload) {
@@ -150,129 +151,21 @@ function getHourlySlice(hourly, start, length = 24) {
     weather_code: hourly.weather_code?.[start + offset]
   })) || [];
 }
-function summarizeDataset(data, id, label) {
-  const hourly = data.hourly || {};
-  const currentTime = data.current?.time || hourly.time?.[0];
-  const idx = getIndexForNow(hourly.time, currentTime);
-  if (!hourly.time || idx < 0) throw new Error('Série horária indisponível');
-  const rain24 = sum((hourly.precipitation || []).slice(idx, idx + 24));
-  const next12 = (hourly.precipitation || []).slice(idx, idx + 12);
-  const next12Chance = (hourly.precipitation_probability || []).slice(idx, idx + 12).filter(v => Number.isFinite(v));
-  const rainEventShare = next12.filter(v => Number(v) >= 0.2).length / Math.max(1, next12.length);
-  const temp = Number.isFinite(data.current?.temperature_2m) ? data.current.temperature_2m : hourly.temperature_2m?.[idx];
-  const code = Number.isFinite(data.current?.weather_code) ? data.current.weather_code : hourly.weather_code?.[idx];
-  return {
-    id,
-    label,
-    temp,
-    rain24,
-    currentRain: Number.isFinite(data.current?.precipitation) ? data.current.precipitation : hourly.precipitation?.[idx],
-    code,
-    time: currentTime,
-    next12MaxChance: next12Chance.length ? Math.max(...next12Chance) : null,
-    rainEventShare,
-    tempSeries: (hourly.temperature_2m || []).slice(idx, idx + 24),
-    rainSeries: (hourly.precipitation || []).slice(idx, idx + 24),
-    raw: data
-  };
+function summarizeDataset(data, id, label, targetHour) {
+  return window.ClimaForecastCore.summary(data, id, label, targetHour || data.current?.time || data.hourly?.time?.[0]);
 }
-
 function computeConsensus(primarySummary, modelSummaries) {
-  const all = [primarySummary, ...modelSummaries].filter(Boolean).filter(item => Number.isFinite(item.temp) || Number.isFinite(item.rain24));
-  if (all.length < 2) {
-    return {
-      summary: primarySummary,
-      tempSpread: null,
-      rainSpread: null,
-      confidence: 35,
-      label: 'Comparação limitada',
-      description: 'Não houve modelos suficientes para uma comparação robusta. O sistema recorreu à previsão principal.',
-      modelsOnline: all.length,
-      worstCaseRain: primarySummary?.rain24 ?? null,
-      rainChance: primarySummary?.next12MaxChance ?? null,
-      calibrationUsed: false
-    };
-  }
-  const temperatures = all.map(m => m.temp).filter(Number.isFinite);
-  const rains = all.map(m => m.rain24).filter(Number.isFinite);
-  const medianTemp = median(temperatures);
-  const medianRain = median(rains);
   const storedCalibration = getCalibration();
-  const distance = storedCalibration?.coords && state.place
-    ? (typeof window.ClimaAudit?.distanceKm === 'function' ? window.ClimaAudit.distanceKm(state.place.latitude, state.place.longitude, storedCalibration.coords.latitude, storedCalibration.coords.longitude) : Infinity)
+  const distance = storedCalibration?.coords && state.place && typeof window.ClimaAudit?.distanceKm === 'function'
+    ? window.ClimaAudit.distanceKm(state.place.latitude, state.place.longitude, storedCalibration.coords.latitude, storedCalibration.coords.longitude)
     : Infinity;
-  const calibration = distance <= 50 ? storedCalibration : null;
-  const weighted = [];
-
-  for (const model of all) {
-    const config = MODEL_CONFIG.find(item => item.id === model.id) || { baseWeight: 0.2 };
-    const calibrationFactor = calibration?.weights?.[model.id] ?? 1;
-    const tempPenalty = Number.isFinite(medianTemp) && Number.isFinite(model.temp) ? 1 / (1 + Math.abs(model.temp - medianTemp) / 3.5) : 1;
-    const rainPenalty = Number.isFinite(medianRain) && Number.isFinite(model.rain24)
-      ? 1 / (1 + Math.abs(model.rain24 - medianRain) / Math.max(4, (medianRain || 0) + 4))
-      : 1;
-    const weight = config.baseWeight * calibrationFactor * tempPenalty * rainPenalty;
-    weighted.push({ ...model, weight });
-  }
-
-  const totalWeight = sum(weighted.map(item => item.weight)) || 1;
-  const normalized = weighted.map(item => ({ ...item, weight: item.weight / totalWeight }));
-  const consensusTemp = normalized.reduce((acc, item) => acc + (Number.isFinite(item.temp) ? item.temp * item.weight : 0), 0);
-  const consensusRain24 = normalized.reduce((acc, item) => acc + (Number.isFinite(item.rain24) ? item.rain24 * item.weight : 0), 0);
-  const eventShareWeighted = normalized.reduce((acc, item) => acc + (Number.isFinite(item.rainEventShare) ? item.rainEventShare * item.weight : 0), 0);
-  const representative = normalized
-    .map(item => ({
-      ...item,
-      distance: (Number.isFinite(item.temp) ? Math.abs(item.temp - consensusTemp) : 999) + (Number.isFinite(item.rain24) ? Math.abs(item.rain24 - consensusRain24) / 4 : 999)
-    }))
-    .sort((a, b) => a.distance - b.distance)[0];
-
-  const tempSpread = temperatures.length ? Math.max(...temperatures) - Math.min(...temperatures) : null;
-  const rainSpread = rains.length ? Math.max(...rains) - Math.min(...rains) : null;
-  const missingPenalty = (MODEL_CONFIG.length - all.length) * 8;
-  const confidence = clamp(Math.round(100
-    - (Number.isFinite(tempSpread) ? tempSpread * 9 : 18)
-    - (Number.isFinite(rainSpread) ? Math.min(rainSpread * 2.5, 36) : 14)
-    - missingPenalty), 22, 96);
-
-  let label = 'Convergência moderada';
-  let description = 'Os modelos apresentam comportamento relativamente consistente, mas ainda existe alguma diferença relevante nas variáveis principais.';
-  if (confidence >= 80) {
-    label = 'Convergência alta';
-    description = 'Os modelos estão próximos entre si. A previsão está mais estável que o normal para temperatura e chuva.';
-  } else if (confidence < 55) {
-    label = 'Divergência elevada';
-    description = 'Os modelos estão mais dispersos. Interprete a previsão com maior cautela e acompanhe as atualizações.';
-  }
-
-  const rainChanceBase = Number.isFinite(primarySummary?.next12MaxChance) ? primarySummary.next12MaxChance : null;
-  const rainChance = rainChanceBase !== null
-    ? Math.round(clamp(rainChanceBase * 0.65 + eventShareWeighted * 100 * 0.35, 0, 100))
-    : Math.round(clamp(eventShareWeighted * 100, 0, 100));
-
-  return {
-    summary: {
-      ...representative,
-      temp: consensusTemp,
-      rain24: consensusRain24,
-      code: representative?.code ?? primarySummary?.code,
-      label: representative?.label ?? 'Consenso'
-    },
-    weightedModels: normalized,
-    tempSpread,
-    rainSpread,
-    confidence,
-    label,
-    description,
-    modelsOnline: all.length,
-    worstCaseRain: rains.length ? Math.max(...rains) : null,
-    rainChance,
-    calibrationUsed: !!calibration,
-    calibrationMeta: calibration
-  };
+  const ageDays = storedCalibration?.end ? (Date.now() - Date.parse(storedCalibration.end + 'T23:59:59Z')) / 86400000 : Infinity;
+  const validCalibration = storedCalibration?.lead === 1 && distance <= 50 && ageDays >= -1 && ageDays <= 45;
+  return window.ClimaForecastCore.ensemble(primarySummary, modelSummaries, validCalibration ? storedCalibration : null);
 }
 
 function confidenceTone(score) {
+  if (score === null) return { text: 'Dados insuficientes', className: 'pill is-warn' };
   if (score >= 80) return { text: 'Acordo alto', className: 'pill is-good' };
   if (score >= 55) return { text: 'Acordo moderado', className: 'pill is-warn' };
   return { text: 'Baixo acordo', className: 'pill is-bad' };
@@ -309,11 +202,11 @@ function renderCurrent(primaryData, location, consensus) {
 function renderConsensus(consensus) {
   setText('#consensusTitle', consensus.label);
   setText('#consensusText', consensus.description);
-  setText('#confidenceScore', number(consensus.confidence));
+  setText('#confidenceScore', consensus.confidence === null ? '—' : number(consensus.confidence));
   setText('#spreadTemp', Number.isFinite(consensus.tempSpread) ? `${number(consensus.tempSpread, 1)} °C` : '—');
   setText('#spreadRain', Number.isFinite(consensus.rainSpread) ? `${number(consensus.rainSpread, 1)} mm` : '—');
   setText('#modelsOnline', String(consensus.modelsOnline));
-  setText('#calibrationState', consensus.calibrationUsed ? 'Ativa na região' : getCalibration() ? 'Fora da região' : 'Sem calibração');
+  setText('#calibrationState', consensus.calibrationUsed ? 'Ativa na região' : getCalibration() ? 'Inativa (local ou validade)' : 'Sem calibração');
 }
 
 function renderRain(primaryData, consensus) {
@@ -325,11 +218,12 @@ function renderRain(primaryData, consensus) {
   const baseChance = chance12.length ? Math.max(...chance12) : null;
   const consensusChance = Number.isFinite(consensus.rainChance) ? consensus.rainChance : baseChance;
   setText('#rainChance', consensusChance === null ? '—' : `${number(consensusChance)}%`);
-  setText('#riskLabel', consensusChance >= 70 ? 'Chance elevada de chuva no período.' : consensusChance >= 40 ? 'Chance moderada de chuva no período.' : 'Baixa chance de chuva nas próximas horas.');
+  setText('#riskLabel', consensusChance === null ? 'Probabilidade horária indisponível.' : consensusChance >= 70 ? 'Maior probabilidade horária elevada nas próximas 12 horas.' : consensusChance >= 40 ? 'Maior probabilidade horária moderada nas próximas 12 horas.' : 'Baixa probabilidade em cada hora das próximas 12 horas.');
   $('#rainBar').style.width = `${clamp(consensusChance || 0, 0, 100)}%`;
-  const rain24Primary = sum((h.precipitation || []).slice(start, start + 24));
+  const rain24Values = (h.precipitation || []).slice(start, start + 24);
+  const rain24Primary = rain24Values.length === 24 && rain24Values.every(Number.isFinite) ? sum(rain24Values) : null;
   const nextRainIndex = (h.precipitation || []).findIndex((value, index) => index >= start && index < start + 24 && Number(value) >= 0.2);
-  setText('#rain24', `${number(rain24Primary, 1)} mm`);
+  setText('#rain24', rain24Primary === null ? '—' : `${number(rain24Primary, 1)} mm`);
   setText('#nextRain', nextRainIndex < 0 ? 'Sem sinal relevante' : toHour(h.time[nextRainIndex]));
   setText('#consensusRain24', Number.isFinite(consensus.summary?.rain24) ? `${number(consensus.summary.rain24, 1)} mm` : '—');
   setText('#worstCaseRain', Number.isFinite(consensus.worstCaseRain) ? `${number(consensus.worstCaseRain, 1)} mm` : '—');
@@ -471,6 +365,35 @@ function showSuggestions(results) {
   target.classList.remove('hidden');
 }
 
+const RECENT_CITIES_KEY = 'climaradar.recentCities.v1';
+function readRecentCities() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RECENT_CITIES_KEY) || '[]');
+    return Array.isArray(saved) ? saved.filter(x => x && typeof x.name === 'string' && Number.isFinite(x.latitude) && Number.isFinite(x.longitude)).slice(0,5) : [];
+  } catch { return []; }
+}
+function renderRecentCities() {
+  const container = $('#recentCities');
+  if (!container) return;
+  const cities = readRecentCities();
+  container.replaceChildren();
+  if (!cities.length) {const empty=document.createElement('span');empty.className='city-favorites-empty';empty.textContent='Suas consultas aparecerão aqui.';container.append(empty);return;}
+  for (const place of cities) {
+    const button=document.createElement('button');button.type='button';button.className='recent-city';
+    button.textContent=place.name+(place.admin1 ? ` · ${place.admin1}` : '');
+    button.title=`Consultar ${place.name}`;
+    button.addEventListener('click',()=>{ $('#cityInput').value=place.name; loadPlace(place); });
+    container.append(button);
+  }
+}
+function saveRecentCity(place) {
+  const normalized={name:place.name,admin1:place.admin1||'',latitude:place.latitude,longitude:place.longitude};
+  const cities=readRecentCities().filter(x=> !(x.latitude===normalized.latitude&&x.longitude===normalized.longitude));
+  cities.unshift(normalized);
+  try{localStorage.setItem(RECENT_CITIES_KEY,JSON.stringify(cities.slice(0,5)));}catch{}
+  renderRecentCities();
+}
+
 async function loadPlace(place) {
   const id = ++state.loadingId;
   if (state.abort) state.abort.abort();
@@ -493,7 +416,6 @@ async function loadPlace(place) {
   });
   const modelParams = {
     ...common,
-    current: 'temperature_2m,precipitation,weather_code',
     hourly: 'temperature_2m,precipitation,weather_code'
   };
 
@@ -511,13 +433,14 @@ async function loadPlace(place) {
   }
 
   const primaryData = primaryResult.value;
-  const primarySummary = summarizeDataset(primaryData, 'bestmatch', 'Best Match');
+  const targetHour = primaryData.current?.time || primaryData.hourly?.time?.[0];
+  const primarySummary = summarizeDataset(primaryData, 'bestmatch', 'Best Match', targetHour);
   const modelSummaries = [];
   MODEL_CONFIG.filter(model => model.type !== 'primary').forEach((config, index) => {
     const result = modelResults[index];
     if (result.status === 'fulfilled') {
       try {
-        modelSummaries.push(summarizeDataset(result.value, config.id, config.label));
+        modelSummaries.push(summarizeDataset(result.value, config.id, config.label, targetHour));
       } catch { /* ignora modelo inválido */ }
     }
   });
@@ -529,6 +452,8 @@ async function loadPlace(place) {
   renderHourly(primaryData, consensus);
   renderDaily(primaryData);
   renderModels(primarySummary, modelSummaries);
+  saveRecentCity(place);
+  document.dispatchEvent(new CustomEvent('climaradar:models-ready', {detail: {primary: primarySummary, models: [primarySummary, ...modelSummaries]}}));
   try {
     localStorage.setItem('climaradar-place', JSON.stringify({ name: place.name, admin1: place.admin1 || '', latitude: place.latitude, longitude: place.longitude }));
   } catch { /* armazenamento indisponível */ }
@@ -595,6 +520,7 @@ $('#useLocation').addEventListener('click', () => {
 
 function boot() {
   setCalibrationState();
+  renderRecentCities();
   const saved = (() => {
     try { return JSON.parse(localStorage.getItem('climaradar-place')); } catch { return null; }
   })();

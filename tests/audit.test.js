@@ -71,10 +71,36 @@ test('erros absolutos, viés, chuva e horários calculados sem vazamento de prev
 });
 test('erros: modelos com campos ausentes não geram MAE fictício', () => {
   assert.deepEqual(evaluate([{time:'2026-10-25T00:00',temp:22,rain:0}],{time:['2026-10-25T00:00']},2),{
-    nTemp:0,tempMae:null,tempBias:null,nRain:0,rainMae:null,rainHitRate:null,rainyHours:0
+    nTemp:0,tempMae:null,tempBias:null,nRain:0,rainMae:null,rainHitRate:null,rainyHours:0,wetHours:0,rainMaeWet:null
   });
 });
 test('geodistância da mesma posição é zero', () => {
   assert.equal(distanceKm(-20,-48,-20,-48),0);
   assert.ok(distanceKm(-20,-48,-21,-48)>100);
+});
+
+test('comparação usa somente as mesmas horas observadas nos modelos',()=>{
+  const {evaluateComparable}=require('../audit-core.js');
+  const times=Array.from({length:80},(_,i)=>new Date(Date.UTC(2026,9,20,0,0)+i*3600000).toISOString().slice(0,16));
+  const observations=times.map((time,i)=>({time,temp:20+i/10,rain:i%9===0?1:0}));
+  const a={id:'ecmwf',hourly:{time:times,temperature_2m_previous_day1:times.map((_,i)=>20+i/10),precipitation_previous_day1:times.map(()=>0)}};
+  const b={id:'gfs',hourly:{time:times,temperature_2m_previous_day1:times.map((_,i)=>i<10?null:21+i/10),precipitation_previous_day1:times.map((_,i)=>i<10?null:0.1)}};
+  const result=evaluateComparable(observations,[a,b],1);
+  assert.equal(result.commonTempHours,70);
+  assert.equal(result.commonRainHours,70);
+  assert.deepEqual(result.rows.map(x=>x.result.nTemp),[70,70]);
+  assert.ok(Math.abs(result.rows[0].result.tempMae)<0.0000001);
+  assert.ok(Math.abs(result.rows[1].result.tempMae-1)<0.0000001);
+  assert.ok(result.rows[0].result.wetHours>0);
+});
+test('comparação não inventa desempenho quando não há horas comuns',()=>{
+  const {evaluateComparable}=require('../audit-core.js');
+  const time=Array.from({length:48},(_,i)=>new Date(Date.UTC(2026,9,20)+i*3600000).toISOString().slice(0,16));
+  const obs=time.map(t=>({time:t,temp:21,rain:0}));
+  const a={id:'ecmwf',hourly:{time:time.slice(0,24),temperature_2m_previous_day1:Array(24).fill(21),precipitation_previous_day1:Array(24).fill(0)}};
+  const b={id:'gfs',hourly:{time:time.slice(24),temperature_2m_previous_day1:Array(24).fill(21),precipitation_previous_day1:Array(24).fill(0)}};
+  const report=evaluateComparable(obs,[a,b],1);
+  assert.equal(report.commonTempHours,0);
+  assert.equal(report.commonRainHours,0);
+  assert.deepEqual(report.rows.map(r=>r.result.nTemp),[0,0]);
 });
