@@ -1,0 +1,48 @@
+name: Optimize ClimaRadar WebP assets
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/optimize-webp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image optimizer
+        run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Optimize WebP assets and update HTML/CSS
+        run: python scripts/optimize_images.py
+      - name: Validate image references
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('.')
+          html=(root/'index.html').read_text(encoding='utf-8')
+          for name in re.findall(r'(?:src|href|srcset)="(\./assets/[^"]+)"', html):
+              assert (root/name).is_file(), name
+          print('all asset references resolved')
+          PY
+      - name: Commit optimized images
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets index.html premium.css README.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Optimize meteorological site images: smaller responsive WebP assets'
+            git push
+          else
+            echo 'Images already optimized'
+          fi
