@@ -1,63 +1,74 @@
-# ClimaRadar Brasil — MVP 0.1
+# ClimaRadar Brasil — v0.2 (auditoria de precisão)
 
-Site meteorológico **estático** (HTML, CSS, JS) pronto para colocar no GitHub Pages ou abrir em servidor HTTP local.
+Site meteorológico estático em **HTML, CSS e JavaScript**, preparado para hospedar no GitHub Pages, sem dependências de build. Esta é uma versão de desenvolvimento e não um sistema oficialmente certificado de previsão meteorológica.
 
-## Funcionalidades
+## O que funciona
 
-- Pesquisa por municípios brasileiros (Open-Meteo Geocoding / GeoNames).
-- Previsão atual **estimada por modelo**: temperatura, sensação, umidade, vento, chuva.
-- Gráfico horário com temperatura e probabilidade de chuva; cartões de 7 dias.
-- Comparação independente de 3 modelos: ECMWF IFS (resolução aberta), NOAA GFS e DWD ICON Global.
-- Indicador de **divergência entre modelos**, que não deve ser confundido com a precisão histórica.
-- Acesso ao radar do IPMet, avisos oficiais do INMET, CPTEC e MSN via links externos.
-- Geolocalização apenas quando o visitante clicar para permitir; memorização local da cidade no browser.
+- Busca por cidades do Brasil, localização (mediante permissão), condições estimadas, chuva horária, gráfico de temperatura e previsão de 7 dias (Open-Meteo).
+- Comparação isolada de três modelos: **ECMWF IFS HRES 9 km**, **NOAA GFS Seamless** e **DWD ICON Global**, com tolerância a falhas individuais. A passagem do ECMWF de 0,25° (v0.1) para 9 km nesta revisão não prova aumento de acurácia para todas as localidades.
+- **Nova auditoria de precisão:** importa no próprio navegador um CSV horário de estação automática do INMET, interpreta campos comuns no formato original, extrai coordenadas quando disponíveis e descarta sentinelas `9999`, `NULL`, ausências, datas impossíveis e valores fora dos limites de plausibilidade.
+- Consulta a **Previous Runs API** do Open-Meteo para três modelos, com antecedência de 24, 48 ou 72 horas, no endereço das **coordenadas da estação**, não da cidade.
+- Medidas de **erro absoluto médio (MAE) e viés da temperatura (°C)**, erro médio de precipitação (mm/h), número de amostras e eventual indisponibilidade por modelo. Correlaciona horários por **UTC**; diferencia observações reais de previsões modeladas.
+- Classifica menor MAE de temperatura **somente dentro da amostra avaliada**, com mínimo de 12 pares válidos. Não aplica correção automática aos modelos ainda; isso exigiria validação fora da amostra.
+- Exportação em CSV do relatório de auditoria, com fonte, coordenadas, janela, horizonte e quantidade de observações.
+- Acesso via links externos ao IPMet, avisos do INMET, CPTEC/INPE e MSN Clima; não redistribui produtos de radar.
 
-## Publicação no GitHub Pages
+## Site publicado no GitHub Pages
 
-1. Crie um repositório GitHub, por exemplo `climaradar-brasil`.
-2. Envie `index.html`, `styles.css` e `app.js` para a raiz do repositório.
-3. Em Settings → Pages → Build and deployment, selecione Deploy from a branch, `main`, `/ (root)` e salve.
-4. Acesse a URL do Pages exibida pelo GitHub. Navegadores exigem HTTPS para geolocalização, e GitHub Pages fornece HTTPS.
+- Site: https://jogoiarexx-blip.github.io/Clima-Radar-Brasil/
+- Repositório: https://github.com/jogoiarexx-blip/Clima-Radar-Brasil
+- Publicação da v0.2: o **index.html da raiz é autocontido**, com CSS, lógica de previsão e auditoria embutidos. Ele funciona sem build ou dependências de arquivos JavaScript locais; os arquivos `app.js` e `styles.css` antigos presentes no repositório não são carregados por esta versão.
+- O pacote modular completo da v0.2 contém `index.html`, `app.js`, `styles.css`, `audit-core.js`, `audit-ui.js` e testes, para desenvolvimento e futuras alterações.
+- Fonte de publicação: branch `main`, diretório `/ (root)`, com deploy via GitHub Pages. O workflow do Pages pode levar algum tempo até refletir o commit mais recente.
+- Geolocalização depende de HTTPS e permissão do navegador. APIs de terceiros exigem conectividade.
 
-Para testar localmente, na pasta do projeto execute `python -m http.server 8000` e abra `http://localhost:8000`.
+Para testar o arquivo de publicação localmente, abra `index.html` no navegador ou use um servidor HTTP local.
 
-## Transparência e limitações
+## Como utilizar a nova auditoria
 
-- **Não é um sistema de nowcasting próprio**: por enquanto o radar IPMet abre no site original. Alguns produtos IPMet têm termos que **proíbem redistribuir imagens**. Negociar permissão/API antes de usar imagens no ClimaRadar.
-- **Não inclui API da MSN**. MSN é uma inspiração de interface e um link para comparação manual. Não fazer scraping nem usar endpoints privados da Microsoft.
-- **Dados atuais são modelados**, não leituras de estação. Na fase seguinte será importante integrar observações do INMET e avaliar a distância e a qualidade da estação.
-- Os indicadores de consenso descrevem apenas amplitude das diferenças, **não confiança probabilística calibrada**, acurácia ou nowcast.
-- A infraestrutura não possui backend ou armazenamento central. Não há ainda avaliação de previsões passadas, correção por viés, previsão de deslocamento de radar, alertas automáticos ou push.
-- A disponibilidade dos modelos depende da API e de seus próprios ciclos e restrições; um modelo pode aparecer como "Indisponível" sem quebrar o site todo.
-- APIs Open-Meteo são gratuitas sem chave para **uso não comercial** dentro dos limites publicados (consulte a política atual antes de monetizar), e exigem crédito conforme CC BY 4.0. Para operação comercial use plano apropriado.
-- Alertas oficiais devem ser conferidos diretamente em https://avisos.inmet.gov.br/.
+1. Abra https://portal.inmet.gov.br/dadoshistoricos, escolha dados de **estação automática** e baixe o pacote ou dados da estação no formato CSV. Se for ZIP, descompacte primeiro e selecione **um CSV de estação**.
+2. No site, navegue até **Auditoria meteorológica** e importe esse arquivo `.csv`. O navegador lê o arquivo localmente; não há upload para nossos servidores.
+3. Confira latitude e longitude da estação. Se o cabeçalho não contiver as coordenadas, informe os números reais manualmente (não use as coordenadas do município automaticamente).
+4. Escolha antecedência (24h, 48h ou 72h) e clique em **Comparar os três modelos**. A ferramenta avalia os últimos **14 dias presentes no arquivo** que não estejam no futuro (até 336 horas).
+5. Veja a tabela com MAE, viés, erros de chuva, tamanho da amostra e status. Se desejar, salve o relatório CSV.
 
-## Estrutura
+**Interpretação:** um MAE de 1,8°C significa erro absoluto médio de 1,8°C entre previsão e leitura, *naquele conjunto de horários e naquela estação*. Valores menores não significam automaticamente maior confiança probabilística, maior exatidão para todos os municípios, nem melhor desempenho futuro. Falhas de sensores e diferenças entre a célula do modelo e o sítio da estação influenciam a comparação. O INMET diz expressamente que observações automáticas são brutas e não passam por validação prévia.
 
+## Restrições e cuidados de produção
+
+- **API do INMET:** não prometemos ingestão automática ao vivo. A disponibilidade pública e o CORS da API para observações têm variado; importação local evita depender desses endpoints. Para integração de produção, contate `api@inmet.gov.br` ou use um backend autorizado.
+- **Previous Runs API:** requer internet e disponibilidade de previsões arquivadas. Algumas estações ou modelos/datas podem não ter dados suficientes. A ferramenta **não foi validada end-to-end contra essa API neste ambiente**; os testes executados verificam o parser e os cálculos localmente. A seleção usa `temperature_2m_previous_day{1,2,3}` e `precipitation_previous_day{1,2,3}`; cada sufixo identifica a previsão feita 24/48/72h antes, conforme documentação.
+- **Chuva horária:** previsões de precipitação representam o período horário anterior ao timestamp, compatível conceitualmente com o acumulado horário do INMET, mas convenções específicas de estações, período e limites espaciais exigem conferência.
+- **IPMet:** radar apenas por link externo — não há autorização presumida para copiar mapas ou redistribuir imagens.
+- **INMET:** valores `9999`, NULL ou vazios representam falhas; o formato dos CSVs pode mudar. Coordenadas e horário são essenciais. Dados automáticos são brutos, sujeitos a inconsistências.
+- **Licenças:** Open-Meteo fornece API gratuita sem chave para usos não comerciais dentro dos limites de uso; operação comercial deve contratar licença/plano apropriado. Atribuição de fonte permanece no rodapé. INMET e IPMet têm termos próprios.
+- Sem backend, banco de dados, ETL, calibração baseada em previsão validada, nowcasting próprio de radar ou avisos oficiais integrados por área. A auditoria não altera a previsão principal.
+
+## Testes reproduzíveis
+
+Com Node.js instalado:
+
+```bash
+node --test tests/audit.test.js
+node --check app.js
+node --check audit-ui.js
 ```
-climaradar-brasil/
-  index.html
-  styles.css
-  app.js
-  README.md
-```
 
-## Evolução técnica recomendada
+Cobertura: CSV com metadados de estação, acentos e vírgula decimal; valores faltantes ou suspeitos; horários UTC; datas impossíveis; métricas de erro; entrada ausente de modelo; distância espacial. Testes com dados fictícios são **testes unitários**, não prova de precisão meteorológica ou de disponibilidade de API.
 
-1. Backend (Cloudflare Worker ou equivalente) com cache por grade/cidade, ingestão com licença validada de estações INMET e logs de atualização de fonte.
-2. Conjunto de validação (previsão emitida antes do evento × observado na hora). Medir MAE de temperatura, Brier Score para chuva, calibração, scores por cidade, horizonte e horário.
-3. Pesos dinamicamente calibrados por região, sazonalidade e horizonte. Registrar baseline de cada modelo para provar que o híbrido realmente melhorou, evitando leakage e distinguindo previsão de análise posterior.
-4. Nowcasting de 0–2 horas com dados raster do radar (sob permissão ou fonte aberta), processamento de movimento de ecos e verificação por pluviômetros.
-5. Integração de alertas oficiais com identificação de municípios afetados e histórico auditável, para não gerar avisos inventados.
+## Fontes
 
-## Fontes e documentação
-
-- Open-Meteo: https://open-meteo.com/en/docs
-- ECMWF: https://open-meteo.com/en/docs/ecmwf-api
-- GFS: https://open-meteo.com/en/docs/gfs-api
-- DWD ICON: https://open-meteo.com/en/docs/dwd-api
-- Geocoding: https://open-meteo.com/en/docs/geocoding-api
+- Open-Meteo Forecast API: https://open-meteo.com/en/docs
+- ECMWF 9 km: https://open-meteo.com/en/docs/ecmwf-api
+- Previous Runs: https://open-meteo.com/en/docs/previous-runs-api
+- INMET: https://portal.inmet.gov.br/noticias/saiba-como-acessar-os-dados-meteorol%C3%B3gicos-dispon%C3%ADveis-no-site-do-inmet
+- Dados históricos INMET: https://portal.inmet.gov.br/dadoshistoricos
 - IPMet: https://www.ipmetradar.com.br/home/webadm/2mobileGis.php
-- IPMet Termos: https://produtos.ipmetradar.com.br/usersc/join.php
-- Alertas INMET: https://avisos.inmet.gov.br/
-- CPTEC: https://www.cptec.inpe.br/
+- Alertas oficiais INMET: https://alertas2.inmet.gov.br/
+
+## Próxima revisão sugerida
+
+1. Testar fluxos ponta a ponta em navegador com conexão ativa e obter dados de estações autorizados em backend com cache + monitoramento de disponibilidade.
+2. Salvar previsões imutáveis emitidas no presente e comparar depois contra observações de qualidade controlada, com auditoria periódica em janelas separadas de treino/validação.
+3. Calibrar pesos por localidade e horizonte somente se houver ganho estatístico em amostras não usadas no treinamento.
+4. Integrar mosaicos de radar licenciados com nowcasting de 0 a 2h, verificando permissões de uso e dados antes da implementação.
