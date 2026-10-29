@@ -405,20 +405,29 @@
         <article class="weather-card network-panel">
           <div class="network-intro">
             <div><span class="mini-label">VALIDAÇÃO ESPACIAL E TEMPORAL</span><h3>Teste de generalização entre estações</h3><p>Envie de 3 a 6 arquivos CSV horários do INMET, de estações distintas. Os arquivos são lidos neste navegador; somente coordenadas e datas são consultadas nas APIs públicas do Open-Meteo.</p></div>
-            <span class="network-mark">V0.8 · BETA</span>
+            <span class="network-mark">V0.9 · ANÁLISE REGIONAL</span>
           </div>
           <form id="networkForm" class="network-form">
-            <div class="field-group network-files"><label for="networkCsv">Estações INMET (CSV individuais)</label><input type="file" id="networkCsv" accept=".csv,text/csv" multiple required /><small>3 a 6 estações a pelo menos 10 km entre si · máximo de 8 MB por arquivo</small></div>
-            <div class="field-group"><label for="networkLead">Antecedência comparada</label><select id="networkLead"><option value="1">24 horas</option><option value="2">48 horas</option><option value="3">72 horas</option></select></div>
+            <div class="field-group network-files"><label for="networkCsv">Estações INMET (CSV individuais)</label><input type="file" id="networkCsv" accept=".csv,text/csv" multiple required /><small>3 a 6 estações a pelo menos 10 km entre si · máximo de 8 MB por arquivo · UF obtida do CSV quando informada</small></div>
+            <div class="field-group"><label for="networkLead">Antecedência comparada</label><select id="networkLead"><option value="1">24 horas</option><option value="2">48 horas</option><option value="3">72 horas</option><option value="0">Todas (24/48/72h)</option></select></div>
             <div class="field-group"><label for="networkDays">Janela histórica</label><select id="networkDays"><option value="30">30 dias</option><option value="45">45 dias</option><option value="60" selected>60 dias</option></select></div>
             <div class="network-actions"><button type="submit" id="networkCompare" class="btn btn-primary">Avaliar estações</button><button type="button" id="networkCancel" class="btn btn-secondary" disabled>Cancelar</button><button type="button" id="networkExport" class="btn btn-secondary" disabled>Exportar CSV</button></div>
           </form>
           <p id="networkStatus" class="network-status" role="status" aria-live="polite">Os pesos estimados em outras estações serão avaliados na estação reservada, sem utilizar seus dados para treinamento.</p>
           <div id="networkResult" class="network-result hidden">
             <div class="network-results-head"><div><span class="mini-label">TESTE FORA DA AMOSTRA</span><h3 id="networkHeadline">Resultado multirregional</h3></div><span id="networkBadge" class="holdout-badge">Aguardando</span></div>
+            <div class="network-detail-selector"><label for="networkResultLead">Exibir detalhes da antecedência</label><select id="networkResultLead"><option value="1">24 horas</option><option value="2">48 horas</option><option value="3">72 horas</option></select></div>
             <div id="networkMetrics" class="network-metrics"></div>
             <div id="networkModelSummary" class="network-models"></div>
             <div class="table-wrap"><table class="audit-table"><thead><tr><th>Estação</th><th>Temperatura base</th><th>Temperatura ajustada</th><th>Chuva base</th><th>Chuva ajustada</th><th>Horas testadas</th><th>Situação</th></tr></thead><tbody id="networkRows"></tbody></table></div>
+            <section class="regional-report" aria-labelledby="regionalHeading">
+              <div class="regional-report-head"><div><span class="mini-label">ERRO REAL DA AMOSTRA</span><h3 id="regionalHeading">Panorama por região e antecedência</h3></div><span class="network-mark">INMET + 4 modelos</span></div>
+              <p id="regionalCoverage" class="regional-coverage">A cobertura dependerá das UFs informadas nos CSVs importados.</p>
+              <div class="regional-legend"><span>Comparação por estação elegível; cada estação tem o mesmo peso no resultado da região.</span><span>Quanto menor o MAE, menor foi o erro no período testado.</span></div>
+              <div class="regional-filters"><label for="regionalMetric">Variável</label><select id="regionalMetric"><option value="temp">Temperatura (°C)</option><option value="rain">Precipitação (mm/h)</option></select></div>
+              <div class="table-wrap"><table class="audit-table regional-table"><thead><tr><th>Região</th><th>Antecedência</th><th>Estações válidas</th><th>ECMWF</th><th>GFS</th><th>ICON</th><th>GEM</th><th>Base</th><th>Calibrado</th></tr></thead><tbody id="regionalRows"></tbody></table></div>
+              <p class="regional-disclaimer">Relatório restrito aos arquivos enviados. Sem amostra representativa de todos os estados e estações, não é um índice de precisão nacional. Estações sem UF declarada aparecem em um grupo separado.</p>
+            </section>
             <p class="network-disclaimer">A comparação dá o mesmo peso a cada estação elegível, exige dados horários coincidentes entre modelos e utiliza embargo de 24h antes dos dois últimos dias reservados. A aprovação é apenas diagnóstica: não altera automaticamente a previsão exibida no site.</p>
           </div>
         </article>
@@ -485,6 +494,7 @@
   <script src="./validation-core.js" defer></script>
   <script src="./audit-ui.js" defer></script>
   <script src="./network-core.js" defer></script>
+  <script src="./regional-core.js" defer></script>
   <script src="./network-ui.js" defer></script>
   <script src="./radar-core.js" defer></script>
   <script src="./radar.js" defer></script>

@@ -19,7 +19,7 @@ archives={}
 files=[]
 for s in range(3):
     lat=-20.5+s*2.5;lon=-48+s*2.5
-    csv=f'ESTACAO:;ESTACAO {s}\nCODIGO (WMO):;A{s}01\nLATITUDE:;{lat}\nLONGITUDE:;{lon}\nData;Hora UTC;PRECIPITAÇÃO TOTAL, HORÁRIO (mm);TEMPERATURA DO AR - BULBO SECO, HORARIA (°C)\n'
+    csv=f'ESTACAO:;ESTACAO {s}\nUF:;{["SP","MG","GO"][s]}\nCODIGO (WMO):;A{s}01\nLATITUDE:;{lat}\nLONGITUDE:;{lon}\nData;Hora UTC;PRECIPITAÇÃO TOTAL, HORÁRIO (mm);TEMPERATURA DO AR - BULBO SECO, HORARIA (°C)\n'
     for i,t in enumerate(times):
         d=datetime.strptime(t,'%Y-%m-%dT%H:%M')
         csv+=f'{d.strftime("%Y/%m/%d")};{d.strftime("%H%M")} UTC;'+('3,0' if i%6==0 else '0')+';25,0\n'
@@ -28,6 +28,9 @@ for s in range(3):
         archives[f'{lat:.1f}|{model}']={'time':times,
           'temperature_2m_previous_day1':[25.1 if k==1 else 29]*240,
           'precipitation_previous_day1':[(3 if i%6==0 else 0)+(0.1 if k==1 else 2) for i in range(240)]}
+        for lead in (2,3):
+            archives[f'{lat:.1f}|{model}'][f'temperature_2m_previous_day{lead}']=[25.1 if k==1 else 29]*240
+            archives[f'{lat:.1f}|{model}'][f'precipitation_previous_day{lead}']=[(3 if i%6==0 else 0)+(0.1 if k==1 else 2) for i in range(240)]
 shim='''<script>
 const ARCHIVE=__ARCHIVE__;const MAIN=__MAIN__;
 window.fetch=async(input)=>{const u=new URL(input);if(u.hostname==='previous-runs-api.open-meteo.com'){
@@ -38,7 +41,7 @@ if(u.pathname.includes('/weather-maps.json'))return {ok:true,json:async()=>({hos
 if(u.pathname.includes('/search'))return {ok:true,json:async()=>({results:[]})};
 return {ok:true,json:async()=>MAIN};};</script>'''.replace('__ARCHIVE__',json.dumps(archives)).replace('__MAIN__',json.dumps(primary))
 html=html.replace('</head>',shim+'\n</head>')
-for name in ['forecast-core.js','app.js','model-compare.js','audit-core.js','validation-core.js','audit-ui.js','network-core.js','network-ui.js','radar-core.js','radar.js','mobile.js']:
+for name in ['forecast-core.js','app.js','model-compare.js','audit-core.js','validation-core.js','audit-ui.js','network-core.js','regional-core.js','network-ui.js','radar-core.js','radar.js','mobile.js']:
     html=html.replace(f'<script src="./{name}" defer></script>','<script>'+(root/name).read_text(encoding='utf8')+'</script>')
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium')
@@ -47,9 +50,22 @@ with sync_playwright() as p:
     page.on('pageerror',lambda error:errors.append(str(error)))
     page.set_content(html,wait_until='domcontentloaded')
     page.locator('#networkCsv').set_input_files(files)
+    page.locator('#networkLead').select_option('0')
     page.locator('#networkCompare').click()
     page.wait_for_function("document.querySelector('#networkRows')?.children.length === 3",timeout=25000)
     result=page.evaluate("""() => ({result:document.querySelector('#networkResult').className,rows:document.querySelectorAll('#networkRows tr').length,summary:document.querySelector('#networkHeadline').textContent,export:!document.querySelector('#networkExport').disabled,scrollWidth:document.documentElement.scrollWidth})""")
     assert result['rows']==3 and result['export'] and not errors,(result,errors)
+    coverage=page.locator('#regionalCoverage').inner_text()
+    assert '3 UF(s) identificada(s)' in coverage, coverage
+    page.locator('#networkResultLead').select_option('3')
+    assert '72h antes' in page.locator('#networkHeadline').inner_text()
+    page.locator('#regionalMetric').select_option('rain')
+    assert page.locator('#regionalRows tr').count() == 6
+    print('Relatório regional:',coverage,'linhas:',page.locator('#regionalRows tr').count())
     print('Auditoria multiestacao no navegador:',result,'erros JS:',len(errors))
+    page.set_viewport_size({'width':390,'height':844})
+    page.wait_for_timeout(150)
+    layout=page.evaluate("() => ({width:document.documentElement.scrollWidth, viewport:innerWidth, table:document.querySelector('.regional-table')?.scrollWidth})")
+    assert layout['width']<=layout['viewport'], layout
+    print('Relatório mobile:', layout)
     browser.close()

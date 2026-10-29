@@ -62,7 +62,7 @@
     const sep = [';', '\t', ','].sort((a, b) => (lines.slice(0, 12).reduce((n,s)=>n+(s.split(b).length-1),0)) - (lines.slice(0, 12).reduce((n,s)=>n+(s.split(a).length-1),0)))[0];
     // Preferência por ponto e vírgula, para não dividir números decimais com vírgula.
     const delimiter = lines.some(l => /^(DATA|DATA.*HORA)/i.test(l) && l.includes(';')) || lines.slice(0,12).some(l => /^(LATITUDE|LONGITUDE|ESTACAO)/i.test(l) && l.includes(';')) ? ';' : sep;
-    const metadata = { station: null, code: null, latitude: null, longitude: null };
+    const metadata = { station: null, code: null, latitude: null, longitude: null, uf: null };
     let headerIndex = -1, indices = null;
     lines.forEach((line, idx) => {
       if (idx > 55 || headerIndex >= 0) return;
@@ -70,6 +70,7 @@
       if (label === 'LATITUDE') metadata.latitude = numeric(parts[1]);
       if (label === 'LONGITUDE') metadata.longitude = numeric(parts[1]);
       if (label === 'ESTACAO') metadata.station = parts.slice(1).join(' ').trim() || null;
+      if (/^(UF|ESTADO|UNIDADE FEDERATIVA|SIGLA UF)$/.test(label)) metadata.uf = parts[1]?.trim() || null;
       if (/^(CODIGO|CODIGO \(WMO\))/.test(label)) metadata.code = parts[1]?.trim() || null;
       const cols = parts.map(normalize);
       const day = pickColumn(cols, [/^DATA(?:\b|\s|\()/, /^DT_MEDICAO$/]);

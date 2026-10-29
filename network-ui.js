@@ -1,4 +1,4 @@
-/* ClimaRadar v0.8 — auditoria multiestracao; dados CSV processados no navegador. */
+/* ClimaRadar v0.9 — auditoria por UF, regiao e antecedencia; dados CSV processados no navegador. */
 (() => {
   'use strict';
   const $=q=>document.querySelector(q);
@@ -9,6 +9,7 @@
     {id:'gem',label:'GEM',model:'cmc_gem_seamless'}
   ];
   const labels=Object.fromEntries(models.map(m=>[m.id,m.label]));
+  const leads=[1,2,3];
   const nf=(v,d=2)=>typeof v==='number'&&Number.isFinite(v)
     ? v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
   let runId=0;
@@ -53,7 +54,7 @@
       const end=past.at(-1).time.slice(0,10);
       const start=dateShift(end,1-days);
       const observations=past.filter(row=>row.time.slice(0,10)>=start);
-      const station={id:parsed.code||`${parsed.latitude.toFixed(3)},${parsed.longitude.toFixed(3)}`,
+      const station={uf:window.ClimaRegional.ufFromMetadata(parsed.uf),id:parsed.code||`${parsed.latitude.toFixed(3)},${parsed.longitude.toFixed(3)}`,
         name:parsed.station||file.name,coords:{lat:parsed.latitude,lon:parsed.longitude},
         start,end,observations,candidates:[]};
       // Erros de digitação e arquivos duplicados são detectados antes das requisições.
@@ -75,7 +76,7 @@
         const task=tasks[index++];
         const params=new URLSearchParams({latitude:String(task.station.coords.lat),longitude:String(task.station.coords.lon),
           start_date:task.station.start,end_date:task.station.end,timezone:'UTC',models:task.model.model,
-          hourly:`temperature_2m_previous_day${lead},precipitation_previous_day${lead}`});
+          hourly:(lead===0?leads:[lead]).flatMap(n=>[`temperature_2m_previous_day${n}`,`precipitation_previous_day${n}`]).join(',')});
         const url='https://previous-runs-api.open-meteo.com/v1/forecast?'+params;
         try{
           const hourly=await json(url,signal);
@@ -130,6 +131,35 @@
     }
     $('#networkExport').disabled=false;
   }
+  function renderRegional(regional){
+    const coverage=regional.coverage;
+    $('#regionalCoverage').textContent=`Amostra enviada: ${coverage.stations} estações · ${coverage.states} UF(s) identificada(s) · ${coverage.regions} região(ões) identificada(s)${coverage.withoutUf?` · ${coverage.withoutUf} estação(ões) sem UF`:''}. ${coverage.regions<5?'Cobertura parcial; não representa a precisão nacional.':'Mesmo com cinco regiões, a seleção de estações não é amostra nacional representativa.'}`;
+    const kind=$('#regionalMetric').value;
+    const rows=$('#regionalRows');rows.replaceChildren();
+    const options=regional.rows.filter(r=>r.kind===kind);
+    for(const item of options){
+      const row=document.createElement('tr');
+      row.append(cell(item.region),cell(item.lead*24+'h'),cell(`${item.stationCount}${item.limited?' · amostra pequena':''}`));
+      const values=['ecmwf','gfs','icon','gem'].map(id=>item.models[id]);
+      const eligibleValues=values.filter(Number.isFinite);
+      const minimum=eligibleValues.length?Math.min(...eligibleValues):null;
+      for(const value of values){
+        const td=cell(Number.isFinite(value)?nf(value,2):'—');
+        if(minimum!==null&&value===minimum&&eligibleValues.length>1)td.classList.add('regional-cell-best');
+        row.append(td);
+      }
+      row.append(cell(nf(item.baseMae)),cell(nf(item.tunedMae)));
+      if(item.region==='UF não informada')row.classList.add('regional-unmapped');
+      rows.append(row);
+    }
+    if(!options.length){const row=document.createElement('tr');const td=cell('Não há estações com dados históricos suficientes para esta variável e antecedência.');td.colSpan=9;row.append(td);rows.append(row);}
+  }
+  $('#regionalMetric').addEventListener('change',()=>{if(report)renderRegional(report.regional);});
+  $('#networkResultLead').addEventListener('change',()=>{
+    if(!report)return;
+    const current=report.snapshots.find(shot=>shot.lead===Number($('#networkResultLead').value));
+    if(current){current.result.stationInputs=report.stationInputs;render(current.result);}
+  });
   $('#networkForm').addEventListener('submit',async event=>{
     event.preventDefault();
     const files=[...$('#networkCsv').files];
@@ -143,11 +173,17 @@
       const stations=await readStations(files,days);
       await loadCandidates(stations,lead,controller.signal,run);
       if(run!==runId||controller.signal.aborted)return;
-      const result=window.ClimaNetwork.evaluate(stations,lead);
-      result.stationInputs=stations.map(({id,name})=>({id,name}));
-      report=result;
-      render(result);
-      setStatus(`Concluído: ${stations.length} estações, até ${days} dias por CSV. Os resultados são um teste histórico e não garantem acerto futuro.`);
+      const snapshots=(lead===0?leads:[lead]).map(n=>({lead:n,result:window.ClimaNetwork.evaluate(stations,n)}));
+      const stationInputs=stations.map(({id,name,uf})=>({id,name,uf}));
+      const regional=window.ClimaRegional.summarize(snapshots,stationInputs);
+      report={snapshots,regional,stationInputs};
+      const selector=$('#networkResultLead');
+      [...selector.options].forEach(opt=>{opt.disabled=!snapshots.some(s=>String(s.lead)===opt.value);});
+      selector.value=String(snapshots[0].lead);
+      snapshots[0].result.stationInputs=stationInputs;
+      render(snapshots[0].result);
+      renderRegional(regional);
+      setStatus(`Concluído: ${stations.length} estações, até ${days} dias por CSV, ${snapshots.length} antecedência(s). Somente as estações enviadas estão incluídas; não há validação nacional.`);
     }catch(err){
       if(run===runId)setStatus(err.message||'Não foi possível realizar a comparação.');
     }finally{if(run===runId)setBusy(false);}
@@ -157,14 +193,22 @@
   });
   $('#networkExport').addEventListener('click',()=>{
     if(!report)return;
-    const lines=[['variavel','estacao','valida','periodo_inicio','periodo_fim','horas_teste','mae_base','mae_ajustado','delta_mae','treino_horas','resultado']];
-    for(const [kind,data] of [['temperatura',report.temp],['chuva',report.rain]]){
-      for(const item of data.stations)lines.push([kind,item.name,item.valid?'sim':'não',item.holdoutStart||'',item.holdoutEnd||'',item.holdoutHours||0,
-        item.baseMae??'',item.tunedMae??'',item.delta??'',item.trainHours||0,item.reason||data.reason]);
+    const lines=[['tipo','antecedencia_h','variavel','regiao','uf','estacao','valida','inicio','fim','horas_teste','mae_base','mae_ajustado','mae_ecmwf','mae_gfs','mae_icon','mae_gem','resultado']];
+    const stationById=new Map(report.stationInputs.map(x=>[x.id,x]));
+    for(const shot of report.snapshots){
+      for(const [kind,data] of [['temperatura',shot.result.temp],['chuva',shot.result.rain]]){
+        for(const item of data.stations){
+          const sta=stationById.get(item.id);
+          lines.push(['estacao',shot.lead*24,kind,window.ClimaRegional.regionForUf(sta?.uf)||'UF não informada',sta?.uf||'',item.name,item.valid?'sim':'não',item.holdoutStart||'',item.holdoutEnd||'',item.holdoutHours||0,item.baseMae??'',item.tunedMae??'',item.modelMae?.ecmwf??'',item.modelMae?.gfs??'',item.modelMae?.icon??'',item.modelMae?.gem??'',item.reason||data.reason]);
+        }
+      }
+    }
+    for(const item of report.regional.rows){
+      lines.push(['regiao',item.lead*24,item.kind==='temp'?'temperatura':'chuva',item.region,'','',item.limited?'amostra pequena':'descritivo','','',item.hours,item.baseMae??'',item.tunedMae??'',item.models.ecmwf??'',item.models.gfs??'',item.models.icon??'',item.models.gem??'','agregado por estação']);
     }
     const csv='\ufeff'+lines.map(line=>line.map(safeCsvValue).join(';')).join('\r\n');
     const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-    const a=document.createElement('a');a.href=url;a.download='climaradar-v08-auditoria-multiestacao.csv';
+    const a=document.createElement('a');a.href=url;a.download='climaradar-v09-relatorio-regional.csv';
     document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
   });
 })();

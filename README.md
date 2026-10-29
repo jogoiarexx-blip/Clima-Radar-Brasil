@@ -1,6 +1,22 @@
-# ClimaRadar Brasil — v0.8 (precisão verificada fora da amostra)
+# ClimaRadar Brasil — v0.9 (precisão verificada fora da amostra)
 
 Site estático de meteorologia, otimizado para GitHub Pages, com visualização de radar observado e comparação de modelos meteorológicos. **Não é um serviço de alertas oficial.**
+
+## v0.9 — relatório por região e por antecedência (29/10/2026)
+
+- **Novo panorama regional descritivo** gerado somente com os CSVs INMET enviados pelo usuário; **não é** um boletim nacional nem uma medição da acurácia de todos os estados.
+- Leitura de UF/estado diretamente do cabeçalho do CSV. Estados não documentados no arquivo **não são inferidos por latitude/longitude**: aparecem como `UF não informada`.
+- Agregação por região IBGE e por **24, 48 e 72 h** de antecedência, com seleção de variável (temperatura ou precipitação), modelo e erro de consenso.
+- **Mesmo peso por estação elegível**, independentemente do número de observações horárias; medições ou previsões ausentes não contam como zero.
+- Modo "Todas (24/48/72h)" consulta seis variáveis históricas em uma requisição por modelo/estação, evitando triplicar o número de chamadas; mantém limite de três solicitações simultâneas.
+- Importação, radar, calibração local e modo de antecedência única permanecem preservados. Exportação CSV inclui detalhe por estação e agregados regionais.
+- Avaliação espacial com estação reservada + embargo temporal permanece intacta. Resultados de pequena amostra são explicitamente rotulados.
+
+**Limitação metodológica:** com 3 a 6 estações importadas, os resultados são diagnósticos para a amostra, não comprovam precisão nacional. Os dados são processados no navegador e só consultam a API para obter previsões históricas, sem enviar o conteúdo dos CSVs a um servidor do ClimaRadar.
+
+**Testes:** `node --test tests/*.test.js`, `python3 tests/network_smoke.py`, `python3 tests/ui_smoke.py`, `python3 tests/calibration_smoke.py`. Os smoke tests usam dados meteorológicos simulados.
+
+---
 
 ## Melhorias desta versão
 
@@ -40,6 +56,8 @@ O gráfico comparativo foi implementado em SVG nativo, sem dependência extra de
 - `model-compare.js`: gráfico 24h SVG
 - `radar-core.js`, `radar.js`: mapa Leaflet + RainViewer
 - `audit-core.js`, `audit-ui.js`: auditoria INMET
+- `network-core.js`, `network-ui.js`: auditoria entre estações
+- `regional-core.js`: agregação descritiva por região e antecedência
 - `mobile.js`: navegação mobile
 - `assets/`: SVGs originais
 - `tests/`: testes de cálculo, radar e smoke test de navegador (dados simulados)
