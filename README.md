@@ -187,3 +187,8 @@ Alinhamento estrito da mesma hora em ECMWF, GFS, ICON, GEM e Best Match. A soma 
 - Resultados apenas descritivos da amostra enviada; não extrapolados para a precisão nacional ou para dias futuros.
 - Exportação CSV com indicadores e ligação para dados horários oficiais do INMET.
 - Não altera automaticamente os pesos da previsão em tempo real. Não foram usados dados reais nesta simulação de teste.
+
+
+## v1.4 — Alertas de tempestades e avisos por município (01/11/2026)
+
+A área de alertas oferece dois canais distintos. **Avisos INMET** são reproduzidos da API pública do RadarMeteorológico, apenas quando nome, UF, coordenadas e código IBGE do município são coerentes. Dados desatualizados, indisponíveis ou município não resolvido geram aviso de consulta inconclusiva, nunca falsa segurança. Exibir atribuição ao provedor e link à autoridade oficial. **Riscos preventivos** são sinais exploratórios calculados da previsão do Open-Meteo para 48h: códigos WMO 95/96/99, precipitação de 10/20 mm/h, acumulados de 50/100 mm em 24h e rajadas 60/85 km/h. Não são os limiares oficiais do INMET; não há notificações push em segundo plano. Consulte INMET, Defesa Civil 199 e Bombeiros 193.

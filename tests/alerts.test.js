@@ -1,0 +1,11 @@
+const t=require("node:test"),a=require("node:assert/strict"),c=require("../alert-engine.js");
+const times=Array.from({length:48},(_,i)=>new Date(Date.parse("2026-11-01T12:00:00Z")+i*3600000).toISOString().slice(0,16));
+const fx=()=>({current:{time:times[0]},hourly:{time:times,weather_code:Array(48).fill(0),precipitation:Array(48).fill(0),wind_gusts_10m:Array(48).fill(0)}});
+t("tempestade realçada",()=>{const x=fx();x.hourly.weather_code[1]=99;a.equal(c.hourRisk(x).items.find(i=>i.kind==="storm").level,"high")});
+t("chuva forte e rajada",()=>{const x=fx();x.hourly.precipitation[0]=22;x.hourly.wind_gusts_10m[0]=95;a.equal(c.hourRisk(x).items.length,2)});
+t("24h de chuva requer 24 leituras",()=>{const x=fx();x.hourly.precipitation.fill(5);x.hourly.precipitation[2]=null;const r=c.hourRisk(x,{hours:24});a.equal(r.items.some(e=>e.reason.includes("24h")),false)});
+t("série expirada",()=>{const x=fx();x.current.time="2026-11-15T12:00";a.equal(c.hourRisk(x).status,"stale")});
+t("UF correta",()=>a.equal(c.getUf("São Paulo"),"SP"));
+t("IBGE exato",()=>{const x=c.resolveCity({cidades:[{nome:"Franca",uf:"SP",ibge:3516200,latitude:-20.54,longitude:-47.4}]},{name:"Franca",admin1:"SP",latitude:-20.54,longitude:-47.4});a.equal(x.ibge,"3516200")});
+t("avisos localizados sem atribuir a cidades próximas",()=>{const d={atualizado_em:"2026-11-01T12:00:00Z",alertas:[{evento:"Tempestade",geocodes:[3516200]},{evento:"Chuva",geocodes:[3550308]}]};a.equal(c.official(d,{ibge:"3516200"},Date.parse("2026-11-01T12:20:00Z")).items.length,1)});
+t("feed desatualizado não diz sem alerta",()=>{const d={atualizado_em:"2026-11-01T12:00:00Z",alertas:[]};a.equal(c.official(d,{ibge:"3516200"},Date.parse("2026-11-01T14:00:00Z")).status,"stale")});

@@ -439,7 +439,7 @@ async function loadPlace(place) {
   state.abort = new AbortController();
   const signal = state.abort.signal;
   state.place = place;
-  window.ClimaRadarCurrentPlace = { name: place.name, latitude: place.latitude, longitude: place.longitude };
+  window.ClimaRadarCurrentPlace = { name: place.name, admin1: place.admin1 || place.uf || '', latitude: place.latitude, longitude: place.longitude };
   document.dispatchEvent(new CustomEvent('climaradar:place', { detail: window.ClimaRadarCurrentPlace }));
   state.loading=true;state.lastAttemptAt=Date.now();
   $('#forecastReload').disabled=true;
@@ -453,7 +453,7 @@ async function loadPlace(place) {
   const primaryUrl = queryUrl('https://api.open-meteo.com/v1/forecast', {
     ...common,
     current: 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m',
-    hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,relative_humidity_2m,wind_speed_10m',
+    hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,relative_humidity_2m,wind_speed_10m,wind_gusts_10m',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max'
   });
   const modelParams = {
@@ -522,6 +522,7 @@ async function loadPlace(place) {
   renderHourly(primaryData, consensus);
   renderDaily(primaryData);
   renderModels(primarySummary, modelSummaries);
+  document.dispatchEvent(new CustomEvent('climaradar:forecast-ready',{detail:{data:primaryData,place:window.ClimaRadarCurrentPlace}}));
   state.lastSuccessAt=Date.now();
   const partial=coverage.count<coverage.total;
   markForecastDone('Previsão atualizada · '+coverage.count+'/'+coverage.total+' modelos independentes disponíveis',partial?'partial':'ok');
