@@ -18,13 +18,13 @@ function hourRisk(data,opts={}){
   if(finite(mm)&&mm>=0){available.rain++;if(mm>=10)all.push({kind:"rain",level:mm>=20?"high":"moderate",time,reason:"Chuva de "+mm.toFixed(1)+" mm/h prevista"});}
   if(finite(gust)&&gust>=0){available.wind++;if(gust>=60)all.push({kind:"wind",level:gust>=85?"high":"moderate",time,reason:"Rajada prevista de "+Math.round(gust)+" km/h"});}
   rolling.push(finite(mm)&&mm>=0?mm:null);
-  if(k>=23){const last=rolling.slice(k-23,k+1);if(last.every(n=>n!==null)){const total=last.reduce((a,b)=>a+b,0);if(total>=50)all.push({kind:"rain",level:total>=100?"high":"moderate",time,reason:"Acumulado previsto de "+total.toFixed(1)+" mm em 24h"});}}
+  if(k>=23){const last=rolling.slice(k-23,k+1);if(last.every(n=>n!==null)&&Date.parse(String(times[i]).replace(" ","T"))-Date.parse(String(times[i-23]).replace(" ","T"))===23*3600000){const total=last.reduce((a,b)=>a+b,0);if(total>=50)all.push({kind:"rain",level:total>=100?"high":"moderate",time,reason:"Acumulado previsto de "+total.toFixed(1)+" mm em 24h"});}}
  }
  const grouped=new Map();
  for(const e of all){const prev=grouped.get(e.kind);if(!prev)grouped.set(e.kind,{...e});else if(prev.level!=="high"&&e.level==="high")grouped.set(e.kind,{...e});}
  const items=[...grouped.values()].sort((a,b)=>Number(b.level==="high")-Number(a.level==="high"));
  const values=Object.values(available);
- const status=values.every(n=>n===0)?"unavailable":values.some(n=>n===0)?"partial":"ok";
+ const status=values.every(n=>n===0)?"unavailable":(values.some(n=>n===0)||count<hours)?"partial":"ok";
  return {items,status,inspectedHours:count,availability:available};
 }
 function cityArray(data){if(Array.isArray(data))return data;for(const key of ["cidades","municipios","data","results"])if(Array.isArray(data?.[key]))return data[key];return [];}
